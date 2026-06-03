@@ -196,6 +196,27 @@
     font-size: 11.5px; color: var(--ink-soft); margin-top: 4px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .card-fav {
+    position: absolute; top: 10px; right: 10px;
+    background: none; border: none; cursor: pointer;
+    font-size: 17px; line-height: 1; padding: 2px 4px;
+    color: #ddd; transition: color .15s, transform .15s;
+    border-radius: 50%;
+  }
+  .card-fav:hover { color: #c0392b; transform: scale(1.2); }
+  .card-fav.fav-on { color: #c0392b; }
+
+  /* Star badge on map pins for incontournables */
+  .pin-star {
+    position: absolute;
+    top: -6px; right: -6px;
+    font-size: 13px;
+    line-height: 1;
+    color: #c0392b;
+    text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+    pointer-events: none;
+  }
+  .pin-wrap { position: relative !important; overflow: visible !important; }
   .card-tip-inline {
     margin-top: 8px;
     padding: 8px 10px;
@@ -862,6 +883,9 @@
         <button class="chip chip-circuit" data-cat="__circuits__" id="chip-circuits" style="display:none">
           <span class="chip-icon">◈</span>Mes circuits<span class="chip-count" id="chip-circuits-count"></span>
         </button>
+        <button class="chip" data-cat="__favs__" id="chip-favs" style="--chip-color:#c0392b">
+          <span class="chip-icon">★</span>Incontournables<span class="chip-count" id="chip-favs-count"></span>
+        </button>
         </div>
       <div class="list-meta"><span id="count-label">91 adresses</span></div>
       <div class="list" id="list"></div>
@@ -1025,6 +1049,7 @@ const CIRCUIT_COLORS = ["#a8472e", "#2a8a99", "#3d5a3a", "#c97b3e", "#5a3a6a", "
 const STORAGE_KEY = 'reunion_circuits_v1';
 const TIPS_KEY = 'reunion_tips_v1';
 const HIKES_KEY = 'reunion_hikes_v1';
+const FAVS_KEY = 'reunion_favs_v1';
 const XLSX_TIPS = {"0":"Cirque sans voiture, uniquement accessible en randonnée pour 3h30 de durée. aller descente mais retour montée. Village incontournable et depaysant !","1":"Bon spot pour plonger Plame Masque et Tubas","2":"Balade digestive","3":"Incoutournable...bienvenu sur Mars...","4":"escale pour prendre des barquettes à emporter pour pique nique. N'oubliez pas de jeter un oeil à Notre Dame des laves...","5":"Balade le long d'une falaise donnant un magnifique point de vue sur le Cirque de Mafate (si pas de nuages...)","6":"Crique magnifique avec cascades et possibilité de se mouiller un peu dans les cours d'eau affluents. Restaurant sur place ou pique nique ! incontournable sur un tour de l'île","7":"Sur le chemin vers le cirque de Salazie, arretez vous y, ca vaut le coup d'oeil ;-)","8":"Point de vue sur le Cirque de Mafate","9":"Si vous aimez les vagues qui cassent sur des rochers ! c'est pas mal","10":"Petite randonnée avec point de vue sur Saint Denis","11":"Village sans voiture avec une magnifique cascade; Attention, randonnée courte mais intense car uniquement descente ou montée. mais quel régal !!","12":"Marre du riz? crêperie à Saint Gilles connue","13":"petite balade au bord de l'eau, pas très longue","14":"si vous voulez acheter des bouteilles et autres confiseries à base de rhum!","15":"un brunch ? allez y !","16":"Vous avez envie de prendre un verre sur St Denis avec un peu d'ambiance...foncez surtout le vendredi et samedi !!","17":"Randonnée typique, magnifique point de vue sur Mafate et Salazie, ca demande un effort quand même. Mais ca vaut le coup !","18":"Petit lac à Cilaos pour se balader","19":"Si vous avez envie d'un italien dans un batiment historique","20":"Parking à partir duquel vous démarrez la randonnée vers le Cirque de Mafate","21":"une Ferme au tortue pour un peu de douceur","22":"Parfait si vous avez une 1h de libre pour avoir une vue sur St Denis","23":"Escale inmanquable quand vous allez au Volcan. Faites le au retour, car le Volcan plus tot vous y serez, plus vous aurez de chance de voir quelque chose","24":"Super randonnée avec point de vue, courte et pas difficile","25":"Dimanches 06h à 12h\nMercredi 6h à 12h","26":"Cascade pas trop connue mais arrivée splendide ! appelez nous pour les tips sur la route à suivre ;-)","27":"Bassin naturel aux abords de l'océan !","28":"Front de mer connu de Saint Denis, s'il y a un évènnement, ça sera au Bar à Choix","29":"Lagon cosy et plongée masque tubas  intéressante","30":"Départ du sentier pour descendre dans l'enclos du volcan. Recommandation d'aller jusqu'au cratère Formica Léo et de revenir (le Piton c'est loin et monotone)","31":"Petit restaurant très simple au bord de l'eau avec de bons carris","32":"Vous voulez plonger avec Dauphin et/ou Baleines? ne cherchez pas c'est DUOCEAN. Réservez en avance","33":"Petite aire de pique nique tèrs sympa","34":"Temple Malbar typique, visible depuis la route. Vous pouvez demander à visiter sur place s'il ya quelqu'un...Des fois que...","35":"Restaurant sympa divers sur le bord de l'eau !","36":"Incontournable ! une des plus belles cascades de l'ile. Attention, accès en voiture très pentu et étroit, besoin d'un bon moteur et d'un bon conducteur","37":"Restaurant qui permet de deguster les plats avant des les commander! original et très sympa si vous êtes dans le coin","38":"Vous etes à Salazie? Vous avez faim?Foncez !! allez en terrasse en haut, ne restez pas en bas à l'intérieur. Vous pourrez tester le poulet vanille et plein d'autres plats créoles","39":"Départ dans la frais des hauts et attérissage dans le chaud du sable. Très sympa pour profiter du paysage cotier","40":"Vendredi 06h à 15h\nSamedi 06h à 12h","41":"Plage mi herbe, mi sable avec arbres pour ombre. Très belle, évitez le wkd; les créoles adorent y pique niquer","42":"petite balade digestive simple courte au bord de l'eau","43":"samedi 05h à 12h45","44":"Si vous voulez un casse croute pour la route","45":"Restaurant sur la plage","46":"Les coulées...incontournables, il y en a plusieurs vous les verrez forcément !","47":"Magnifique cascade !! Le sentier est un peu casse cou des fois mais allez-y ca vaut le coup d'oeil !","48":"escale très chouette sur un tour de l'ile !","49":"Plage dans la ville, pas mal de bar et restau, bien pour finir une journée aussi","50":"Rando sympa à Cilaos --> contactez nous","51":"Un bon restaurant créole en buffet dans les marmites !","52":"Départ du sentier pour 1h avec super point de vue","53":"Incontournable ! Point de vue du Piton de la Fournaise! sauf si nuages... allez y le plus tot (avant 9h c'est bien)","54":"Petit bistrot dans le village de la Nouvelle dans le cirque de Mafate","55":"Escale sur la route et magnifique point de vue, arretez vous y","56":"Si vous aimez la vanille et découvrir plus","57":"Activité inédite et rare dans le monde entier. Ne pas être claustro ca aide...mais expérience génial avec Volcanorun, un passionné ! Attention le point de rendez vous sera au niveau des coulées de lave à l'Est de l'ile","58":"Sentier pour les sportifs, on s'y régale de l'avoir fait! belle cascade à la clé et village typique","59":"acitvité fun avec les enfants ! mais aussi pour les adultes ! si vous allez au maido arretez vous y sur le retour","60":"Bar restau tapas sur la plage !","61":"Si vous voulez apprendre plus sur le café à la Réunion","62":"Même si vous n'êtes pas passionné de rhum, cette usine vaut le détour, de la canne au rhum, faites le céneau du soir c'est pas mal","63":"envie d'un petit roof top classe? voila...","64":"Une des entreprises helico, prenez le créneau le plus tot de la journée ! vraiment ! vous pourrez avoir la meilleure meteo","65":"accessible en voiture, belle cascade, passage dans les champs de cannes en arrivant","66":"petit sentier qui amène à une grande cascade, on peut s'y baigner, pas mal si vous êtes dans le coin.","67":"Cratère à voir si vous partez dans l'enclos du volcan","68":"Restaurant très sympa, créole et autre plats, au bord d'une plage connue: Boucan Cannot","69":"pour un brunch à la créole !!","70":"Village du Cirque de Mafate à faire si vous y allez !!","71":"Boulangerie très connue mais qui a brulé...reconstruit temporairement à coté, pas mal de spécialité locales","72":"Si vous n'aimez pas plonger, la mer peut venir à vous. Sympa avec les enfants","73":"Demande un peu d'effort mais faisable pour les débutants","74":"Bon spot pour plonger Plame Masque et Tubas","75":"samedi 05h à 12h","76":"Si vous aimez les plantes, vous y trouverez bonheur","77":"Bon restaurant créole sur St Denis","78":"ah...cherchez le...si vous voyez un jet d'eau souffler vers le haut vous y etes!","79":"brunch ? :-)","80":"petit point de vue sympa, et bon point de rencontre pour aller à plein d'endroits sur l'ile","81":"si vous êtes à la salazie, ça vaut le coups, petite maison créole","82":"beau point de vue, ca vaut le petit crochet de voiture. On peut y voir Grand bassin en contre bas","83":"Point de vue sur Cilaos, accessible en voiture et 5mn à pied","84":"Eglise magique dont la lave à contourner. Ca vaut le coup d'oeil lorsque vous ferez votre tour de l'île","85":"Très sympa si vous cherchez un retau dans le coin, très bon et chouette point vue naturel","86":"AU TOP. Ce restaurant fait de très bon caris et le cadre est magique","87":"Bon spot pour plonger Masque et Tubas","88":"Vous voulez plonger avec bouteille ? ils sont pas mal ;-)","89":"Restaurant de poisson...un des rares :-). Il est bien","90":"Départ du sentier --> conactez nous"};
 
 const state = {
@@ -1040,6 +1065,7 @@ const state = {
   tips: {},
   editingTip: null,
   tipDrawer: null,
+  favs: new Set(),
 };
 
 const markers = [];
@@ -1074,6 +1100,24 @@ function _saveTips_disabled() {
   try { localStorage.setItem(TIPS_KEY, JSON.stringify(state.tips)); }
   catch (e) { console.warn('save tips failed', e); }
 }
+function loadFavs() {
+  try {
+    const raw = localStorage.getItem(FAVS_KEY);
+    state.favs = new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) { state.favs = new Set(); }
+}
+function saveFavs() {
+  try { localStorage.setItem(FAVS_KEY, JSON.stringify([...state.favs])); }
+  catch (e) { console.warn('save favs failed', e); }
+}
+function toggleFav(idx) {
+  if (state.favs.has(idx)) state.favs.delete(idx);
+  else state.favs.add(idx);
+  saveFavs();
+  refreshMarkers();
+  renderListOnly();
+  updateCounts();
+}
 function loadHikes() {
   try {
     const raw = localStorage.getItem(HIKES_KEY);
@@ -1092,6 +1136,22 @@ function nextCircuitColor() {
 }
 function newId() { return 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
 
+function buildPinHtml(idx) {
+  const p = PLACES[idx];
+  const color = CATS.colors[p.cat] || '#444';
+  const icon  = CATS.icons[p.cat]  || '•';
+  const star  = state.favs.has(idx) ? '<span class="pin-star">★</span>' : '';
+  return `<div class="pin" style="--pin-color:${color}"><span>${icon}</span></div>${star}`;
+}
+
+function refreshMarkers() {
+  markers.forEach((m, idx) => {
+    const el = m.getElement();
+    if (!el) return;
+    el.innerHTML = buildPinHtml(idx);
+  });
+}
+
 function initMap() {
   map = L.map('map', { zoomControl: true, attributionControl: true })
     .setView([-21.115, 55.535], 10);
@@ -1101,9 +1161,7 @@ function initMap() {
   }).addTo(map);
 
   PLACES.forEach((p, idx) => {
-    const color = CATS.colors[p.cat] || '#444';
-    const icon  = CATS.icons[p.cat]  || '•';
-    const html = `<div class="pin" style="--pin-color:${color}"><span>${icon}</span></div>`;
+    const html = buildPinHtml(idx);
     const m = L.marker([p.lat, p.lng], {
       icon: L.divIcon({
         className: 'pin-wrap', html,
@@ -1294,9 +1352,10 @@ function escapeHtml(s) {
   })[c]);
 }
 
-function matchesPlace(p) {
+function matchesPlace(p, idx) {
   if (p.cat === 'depart') return false;  // never shown in address list
   if (state.cat === '__circuits__') return false;
+  if (state.cat === '__favs__') return state.favs.has(idx);
   if (state.cat !== 'all' && p.cat !== state.cat) return false;
   if (state.q) {
     const q = state.q.toLowerCase();
@@ -1348,7 +1407,7 @@ function applyFilters() {
 
   const visible = [];
   PLACES.forEach((p, idx) => {
-    const ok = matchesPlace(p);
+    const ok = matchesPlace(p, idx);
     if (ok) {
       visible.push(idx);
       if (!map.hasLayer(markers[idx])) markers[idx].addTo(map);
@@ -1358,17 +1417,20 @@ function applyFilters() {
   });
   renderList(visible);
   updateCounts();
+  const label = state.cat === '__favs__' ? 'incontournable' : 'lieu';
+  const labelP = state.cat === '__favs__' ? 'incontournables' : 'lieux';
   document.getElementById('overlay').innerHTML =
-    `<strong>${visible.length}</strong> lieu${visible.length>1?'x':''} affiché${visible.length>1?'s':''}`;
+    `<strong>${visible.length}</strong> ${visible.length>1?labelP:label} affiché${visible.length>1?'s':''}`;
   document.getElementById('count-label').textContent =
-    `${visible.length} adresse${visible.length>1?'s':''}`;
+    `${visible.length} ${visible.length>1?labelP:label}`;
 }
 
 function updateCounts() {
   const counts = { all: 0 };
-  PLACES.forEach(p => {
+  PLACES.forEach((p, idx) => {
     const ok = state.q ? (p.name + ' ' + p.address).toLowerCase().includes(state.q.toLowerCase()) : true;
     if (!ok) return;
+    if (p.cat === 'depart') return;
     counts.all = (counts.all||0) + 1;
     counts[p.cat] = (counts[p.cat]||0) + 1;
   });
@@ -1379,7 +1441,13 @@ function updateCounts() {
   });
   document.getElementById('chip-circuits-count').textContent =
     state.circuits.length ? `· ${state.circuits.length}` : '';
-  // hike chip removed from DOM
+  const favsCount = state.favs.size;
+  const chipFavs = document.getElementById('chip-favs');
+  if (chipFavs) {
+    chipFavs.style.display = '';
+    const badge = document.getElementById('chip-favs-count');
+    if (badge) badge.textContent = favsCount ? `· ${favsCount}` : '';
+  }
 }
 
 function renderCircuitOnMap(id, fit) {
@@ -1608,7 +1676,10 @@ function renderList(visibleIndices) {
   }
 
   if (!visibleIndices.length) {
-    list.innerHTML = `<div class="empty"><em>Aucun lieu</em>Essayez d'élargir vos filtres.</div>`;
+    const emptyMsg = state.cat === '__favs__'
+      ? `<div class="empty"><em>Pas encore d'incontournables</em>Cliquez sur l'étoile ★ d'une adresse pour l'ajouter ici.</div>`
+      : `<div class="empty"><em>Aucun lieu</em>Essayez d'élargir vos filtres.</div>`;
+    list.innerHTML = emptyMsg;
     return;
   }
   visibleIndices.sort((a,b) => PLACES[a].name.localeCompare(PLACES[b].name, 'fr', {sensitivity:'base'}));
@@ -1621,6 +1692,7 @@ function renderList(visibleIndices) {
     const isActive = state.active === idx;
     const tip = state.tips[idx];
     const hasTip = !!tip;
+    const isFav = state.favs.has(idx);
     // Inline tip block — always visible in the card
     const tipInline = hasTip
       ? `<div class="card-tip-inline">
@@ -1630,7 +1702,8 @@ function renderList(visibleIndices) {
            </div>${escapeHtml(tip)}</div>`
       : `<button class="card-tip-add" data-card-tip="${idx}">✦ Ajouter un tip</button>`;
     const card = `
-      <div class="card${isActive ? ' active' : ''}" data-idx="${idx}" style="--cat-color:${color}">
+      <div class="card${isActive ? ' active' : ''}" data-idx="${idx}" style="--cat-color:${color}; position:relative;">
+        <button class="card-fav${isFav ? ' fav-on' : ''}" data-fav-idx="${idx}" title="${isFav ? 'Retirer des incontournables' : 'Marquer comme incontournable'}">★</button>
         <div class="card-marker">${icon}</div>
         <div class="card-body">
           <h3 class="card-name">${escapeHtml(p.name)}</h3>
@@ -1648,12 +1721,20 @@ function renderList(visibleIndices) {
 
   list.querySelectorAll('.card').forEach(card => {
     card.addEventListener('click', (e) => {
-      // Don't trigger card activate if clicking the tip button inside it
+      // Don't trigger card activate if clicking the tip or fav button inside it
       if (e.target.closest('[data-card-tip]')) return;
+      if (e.target.closest('[data-fav-idx]')) return;
       const idx = +card.getAttribute('data-idx');
       // Close drawer if clicking a different card
       if (state.tipDrawer && state.tipDrawer.idx !== idx) state.tipDrawer = null;
       setActive(idx, true);
+    });
+  });
+  list.querySelectorAll('[data-fav-idx]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = +btn.getAttribute('data-fav-idx');
+      toggleFav(idx);
     });
   });
   list.querySelectorAll('[data-card-tip]').forEach(btn => {
@@ -1685,7 +1766,7 @@ function renderListOnly() {
   const list = document.getElementById('list');
   const visible = [];
   PLACES.forEach((p, idx) => {
-    if (matchesPlace(p)) visible.push(idx);
+    if (matchesPlace(p, idx)) visible.push(idx);
   });
   renderList(visible);
 }
@@ -2297,6 +2378,7 @@ document.querySelector('.chip[data-cat="all"]').classList.add('active');
 state.circuits = [{"kind":"circuit","id":"c_mpqylanc_ve6mb","name":"1 jour - Tour de l'île","note":"A faire sur le début de votre séjour, pas mal pour commencez !","color":"#a8472e","points":[{"idx":65,"note":""},{"idx":48,"note":""},{"idx":6,"note":""},{"idx":46,"note":""},{"idx":41,"note":""},{"idx":49,"note":""}]},{"kind":"circuit","id":"c_mpqyptp6_et58z","name":"1 jour - Le Volcan","note":"Incontournable, faites le tot dans votre séjour car si mauvais temps vous aurez peut être l'occasion de retenter. Partez le plus tôt possible pour viser 9h max au pas de bellecombe ! cela maximisera les chances du temps clair ;-)","color":"#2a8a99","points":[{"idx":55,"note":""},{"idx":53,"note":""},{"idx":30,"note":""},{"idx":67,"note":""},{"idx":23,"note":""}]},{"kind":"circuit","id":"c_mpqysbe0_t480z","name":"1 jour - Cascade Grand Galet","note":"Petit circuit dans le sud pour voir une des plus belles cascades de l'ile. Adaptable en fonction de votre timing.","color":"#3d5a3a","points":[{"idx":42,"note":""},{"idx":13,"note":""},{"idx":86,"note":"au déjeuner avant ou après la cascade en fonction de votre timing"},{"idx":36,"note":"INCONTOURNABLE"},{"idx":27,"note":"escale baignade digestive sur le bassin naturel"},{"idx":41,"note":"pour le coucher de soleil !"}]},{"kind":"circuit","id":"c_mpqyxr4g_jlmw3","name":"1 jour - Cirque de Salazie","note":"","color":"#c97b3e","points":[{"idx":7,"note":"escale cascade vue de la route"},{"idx":81,"note":"case créole typique"},{"idx":38,"note":"Déjeuner - allez en terrasse en haut !"},{"idx":2,"note":"balade digestive avant de redescendre les pieds dans le sable"}]},{"kind":"circuit","id":"c_mpqz08gp_ei6a9","name":"1 jour - Maido","note":"Pique nique dans le parc national du Maido, prolongement juqu'au point de vue et redescente avec escale à la luge !","color":"#5a3a6a","points":[{"idx":8,"note":"Meilleur point de vue sur Mafate ! "},{"idx":5,"note":"petite balade s'il vous plait !"},{"idx":59,"note":"Les enfants et les adultes vont aimer !"},{"idx":87,"note":"finissez les pieds dans le sable au coucher du soleil"}]},{"kind":"circuit","id":"c_mpr283gk_o9t85","name":"1/2 journée","note":"Pique nique à Bassin Boeuf puis Distillerie Savana le soir, il faut réserver !","color":"#7a4d2a","points":[{"idx":26,"note":""},{"idx":47,"note":""},{"idx":62,"note":""}]}];
 state.hikes = [];
 loadTips();
+loadFavs();
 initMap();
 renderCircuitsPanel();
 if (document.getElementById('hike-list')) renderHikesPanel();
