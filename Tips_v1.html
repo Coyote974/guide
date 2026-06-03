@@ -1,0 +1,2305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La Réunion · le Guide de Cynthia et Vincent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  :root {
+    --bg: #f3ede1;
+    --bg-alt: #ebe2d0;
+    --ink: #1a2a25;
+    --ink-soft: #4a5a52;
+    --line: #d4c7a8;
+    --accent: #2d4a3e;
+    --lava: #a8472e;
+    --lagoon: #2a8a99;
+    --gold: #c97b3e;
+    --shadow: 0 2px 8px rgba(26,42,37,.08), 0 12px 32px rgba(26,42,37,.06);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    height: 100vh;
+  }
+
+  .sidebar {
+    background: var(--bg);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 100% 0%, rgba(168,71,46,.05) 0%, transparent 40%),
+      radial-gradient(circle at 0% 100%, rgba(42,138,153,.05) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  .header { padding: 24px 28px 0; position: relative; }
+  .eyebrow {
+    font-family: 'DM Sans';
+    font-size: 11px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--lava); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--line), transparent);
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500; font-size: 34px;
+    line-height: 1.05; margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  h1 em { font-style: italic; font-weight: 300; color: var(--lava); }
+  .sub { font-size: 12.5px; color: var(--ink-soft); margin: 0 0 18px; }
+
+  .tabs {
+    display: flex; gap: 0;
+    padding: 0 28px;
+    border-bottom: 1px solid var(--line);
+    position: relative; z-index: 1;
+  }
+  .tab {
+    background: none; border: none;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    color: var(--ink-soft); padding: 10px 0;
+    margin-right: 22px; cursor: pointer;
+    position: relative; letter-spacing: 0.02em;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); }
+  .tab.active::after {
+    content: ''; position: absolute; bottom: -1px;
+    left: 0; right: 0; height: 2px; background: var(--lava);
+  }
+  .tab-badge {
+    display: inline-block; margin-left: 6px;
+    font-size: 10.5px; color: var(--ink-soft);
+    background: var(--bg-alt); padding: 1px 6px;
+    border-radius: 999px; font-variant-numeric: tabular-nums;
+  }
+  .tab.active .tab-badge { background: var(--lava); color: #fff; }
+
+  .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .panel.active { display: flex; }
+
+  .search-wrap { padding: 16px 28px 0; position: relative; }
+  .search {
+    width: 100%;
+    padding: 11px 14px 11px 40px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255,255,255,.6);
+    font-family: inherit; font-size: 14px;
+    color: var(--ink); outline: none;
+    transition: border-color .15s, background .15s;
+  }
+  .search:focus { border-color: var(--accent); background: #fff; }
+  .search-icon {
+    position: absolute; left: 42px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-soft); font-size: 14px; pointer-events: none;
+  }
+
+  .filters {
+    padding: 14px 22px 14px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .chip {
+    --chip-color: var(--accent);
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink-soft);
+    padding: 6px 11px 6px 9px;
+    border-radius: 999px;
+    font-family: inherit; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; display: inline-flex; align-items: center;
+    gap: 6px; transition: all .15s; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--chip-color); color: var(--chip-color); }
+  .chip.active { background: var(--chip-color); border-color: var(--chip-color); color: #fff; }
+  .chip-icon { font-size: 13px; line-height: 1; }
+  .chip-icon svg { width: 13px; height: 13px; display: block; }
+  .chip-count {
+    font-size: 10.5px; opacity: .7;
+    font-variant-numeric: tabular-nums; margin-left: 2px;
+  }
+  .chip.active .chip-count { opacity: .85; }
+  .chip.chip-circuit { --chip-color: var(--lava); border-style: dashed; }
+
+  .list-meta {
+    padding: 0 28px 10px; font-size: 11.5px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .list-meta::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .list {
+    flex: 1; overflow-y: auto; padding: 0 14px 20px;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+  }
+  .list::-webkit-scrollbar { width: 6px; }
+  .list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+  .card {
+    padding: 13px 14px; margin-bottom: 4px;
+    border-radius: 10px; cursor: pointer;
+    transition: background .15s;
+    display: grid; grid-template-columns: auto 1fr;
+    gap: 12px; align-items: start;
+  }
+  .card:hover { background: rgba(255,255,255,.6); }
+  .card.active { background: #fff; box-shadow: var(--shadow); }
+  .card-marker {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--cat-color); color: #fff;
+    display: grid; place-items: center; font-size: 13px;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .card-marker svg { width: 15px; height: 15px; display: block; }
+  .card-body { min-width: 0; }
+  .card-name {
+    font-family: 'Fraunces', serif; font-size: 16px; font-weight: 500;
+    line-height: 1.2; margin: 0 0 3px; color: var(--ink);
+  }
+  .card-meta { font-size: 11.5px; color: var(--ink-soft); display: flex; gap: 8px; align-items: center; }
+  .card-cat { color: var(--cat-color); font-weight: 500; letter-spacing: 0.04em; }
+  .card-addr {
+    font-size: 11.5px; color: var(--ink-soft); margin-top: 4px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .card-tip-inline {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: linear-gradient(135deg, rgba(168,71,46,.06), rgba(201,123,62,.04));
+    border-left: 2px solid rgba(168,71,46,.35);
+    border-radius: 0 6px 6px 0;
+    font-size: 12.5px;
+    font-style: italic;
+    line-height: 1.45;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .card-tip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .card-tip-label {
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--lava);
+    font-style: normal;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card-tip-label::before { content: '✦'; font-size: 9px; }
+  .card-tip-edit { display:none !important; } .card-tip-edit-off {
+    background: transparent;
+    border: none;
+    font-size: 11px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 0 2px;
+    font-style: normal;
+    font-family: inherit;
+    opacity: .7;
+    flex-shrink: 0;
+  }
+  .card-tip-edit:hover { color: var(--lava); opacity: 1; }
+  .card-tip-add { display:none !important; } .card-tip-add-off {
+    margin-top: 8px;
+    background: transparent;
+    border: 1px dashed rgba(168,71,46,.25);
+    border-radius: 6px;
+    padding: 5px 10px;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: 11px;
+    color: rgba(168,71,46,.6);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .card-tip-add:hover { border-color: var(--lava); color: var(--lava); background: rgba(168,71,46,.04); }
+
+  .empty { padding: 40px 28px; text-align: center; color: var(--ink-soft); font-size: 13px; }
+  .empty em {
+    font-family: 'Fraunces', serif; font-style: italic; display: block;
+    font-size: 22px; color: var(--lava); margin-bottom: 6px;
+  }
+
+  .map { position: relative; height: 100vh; }
+  #map { width: 100%; height: 100%; }
+  .map-overlay {
+    position: absolute; top: 16px; right: 16px; z-index: 500;
+    background: rgba(255,255,255,.92); backdrop-filter: blur(8px);
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; font-size: 12px; color: var(--ink-soft);
+    box-shadow: var(--shadow); pointer-events: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .map-overlay strong {
+    color: var(--ink); font-family: 'Fraunces', serif;
+    font-weight: 500; font-size: 14px; margin-right: 4px;
+  }
+
+  .pin {
+    width: 30px; height: 30px;
+    border-radius: 50% 50% 50% 0;
+    background: var(--pin-color);
+    transform: rotate(-45deg);
+    border: 2px solid #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,.25);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; cursor: pointer;
+    transition: transform .15s;
+  }
+  .pin span { transform: rotate(45deg); display: block; }
+  .pin span svg { width: 15px; height: 15px; display: block; stroke: #fff; }
+  .pin:hover { transform: rotate(-45deg) scale(1.1); }
+  .pin.active { transform: rotate(-45deg) scale(1.25); z-index: 1000 !important; }
+
+  .pin-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--pin-color);
+    border: 2px solid #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,.3);
+    display: grid; place-items: center;
+    color: #fff; font-family: 'Fraunces', serif;
+    font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: transform .15s;
+  }
+  .pin-num:hover { transform: scale(1.1); }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: 12px; box-shadow: var(--shadow); padding: 4px;
+  }
+  .leaflet-popup-content {
+    margin: 14px 16px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; line-height: 1.4; color: var(--ink);
+    min-width: 220px; max-width: 280px;
+  }
+  .popup-cat {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 500; color: var(--cat-color); margin-bottom: 4px;
+  }
+  .popup-name {
+    font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500;
+    margin: 0 0 6px; line-height: 1.15;
+  }
+  .popup-addr { font-size: 12px; color: var(--ink-soft); margin-bottom: 10px; }
+  .popup-note {
+    font-size: 12.5px; background: var(--bg-alt);
+    border-left: 2px solid var(--lava); padding: 7px 10px;
+    margin: 8px 0 10px; border-radius: 0 6px 6px 0; font-style: italic;
+  }
+  .popup-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px; background: var(--ink); color: #fff;
+    text-decoration: none; border-radius: 999px;
+    font-size: 12px; font-weight: 500;
+  }
+  .popup-btn:hover { background: var(--accent); }
+
+  .leaflet-control-attribution {
+    background: rgba(255,255,255,.85) !important;
+    font-size: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
+  }
+
+  /* ========= TIPS — popup (read-only) ========= */
+  .popup-tips {
+    margin: 10px 0;
+    background: linear-gradient(135deg, rgba(168,71,46,.07), rgba(201,123,62,.05));
+    border: 1px solid rgba(168,71,46,.2);
+    border-radius: 8px;
+    padding: 9px 12px;
+  }
+  .popup-tips-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--lava);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .popup-tips-label::before { content: '✦'; font-size: 10px; }
+  .popup-tips-text {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--ink);
+    font-style: italic;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin-bottom: 8px;
+  }
+  .popup-tips-edit-btn {
+    background: transparent;
+    border: 1px solid rgba(168,71,46,.3);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--lava);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .popup-tips-edit-btn:hover { background: var(--lava); color: #fff; }
+  .popup-tips-add {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed rgba(168,71,46,.3);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--lava);
+    cursor: pointer;
+    margin: 8px 0;
+    letter-spacing: 0.01em;
+    transition: all .15s;
+    text-align: left;
+  }
+  .popup-tips-add:hover {
+    border-color: var(--lava);
+    background: rgba(168,71,46,.05);
+  }
+
+  /* ========= TIPS — sidebar drawer ========= */
+  .tip-drawer {
+    background: linear-gradient(135deg, rgba(168,71,46,.06), rgba(201,123,62,.04));
+    border: 1px solid rgba(168,71,46,.2);
+    border-radius: 10px;
+    margin: 0 14px 6px;
+    padding: 12px 14px;
+    animation: slideDown .15s ease;
+  }
+  @keyframes slideDown { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+  .tip-drawer-label {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--lava);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tip-drawer-label span { display:flex; align-items:center; gap:5px; }
+  .tip-drawer-label span::before { content: '✦'; font-size: 10px; }
+  .tip-drawer-close {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    width: 20px; height: 20px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+  }
+  .tip-drawer-close:hover { background: var(--bg-alt); color: var(--ink); }
+  .tip-drawer-read { font-size:13px; line-height:1.5; color:var(--ink); font-style:italic; white-space:pre-wrap; word-wrap:break-word; margin-bottom:10px; }
+  .tip-drawer-actions { display:flex; gap:6px; }
+  .tip-drawer textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid rgba(168,71,46,.25);
+    border-radius: 8px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    margin-bottom: 10px;
+    transition: border-color .15s;
+  }
+  .tip-drawer textarea:focus { border-color: var(--lava); box-shadow: 0 0 0 2px rgba(168,71,46,.1); }
+  .tip-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .tip-btn:hover { background: #fff; color: var(--ink); border-color: var(--ink); }
+  .tip-btn.danger:hover { color: var(--lava); border-color: var(--lava); }
+  .tip-btn.primary {
+    background: var(--lava); color: #fff; border-color: var(--lava);
+    font-weight: 500;
+  }
+  .tip-btn.primary:hover { background: #8e3b25; border-color: #8e3b25; color: #fff; }
+
+  /* ========= SETTINGS MENU ========= */
+  .settings-bar {
+    padding: 10px 24px 12px;
+    display: flex;
+    gap: 6px;
+    border-top: 1px solid var(--line);
+    background: rgba(235, 226, 208, 0.4);
+  }
+  .settings-bar button {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all .12s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .settings-bar button:hover { background: #fff; color: var(--ink); border-color: var(--ink); }
+  .settings-bar button svg { width: 13px; height: 13px; }
+
+  /* ========= CIRCUITS PANEL ========= */
+  /* ===== GOUT A LI ===== */
+  .gout-grid { display: flex; flex-direction: column; gap: 10px; }
+  .gout-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    background: rgba(255,255,255,.55); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px;
+    transition: background .15s, box-shadow .15s;
+  }
+  .gout-card:hover { background: #fff; box-shadow: var(--shadow); }
+  .gout-icon { font-size: 24px; line-height: 1; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; }
+  .gout-card strong { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; color: var(--ink); display: block; margin-bottom: 3px; }
+  .gout-card p { margin: 0; font-size: 12.5px; color: var(--ink-soft); line-height: 1.45; }
+
+  /* ===== CONSEILS ===== */
+  .conseil-section { margin-bottom: 22px; }
+  .conseil-title {
+    font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500;
+    color: var(--ink); margin: 0 0 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--line);
+  }
+  .conseil-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 10px; padding: 10px 12px;
+    background: rgba(255,255,255,.45); border-radius: 8px;
+    border: 1px solid transparent; transition: all .15s;
+  }
+  .conseil-item:hover { background: #fff; border-color: var(--line); box-shadow: var(--shadow); }
+  .conseil-bullet { font-size: 18px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; }
+  .conseil-item strong { font-size: 13.5px; font-weight: 600; color: var(--ink); display: block; margin-bottom: 2px; }
+  .conseil-item p { margin: 0; font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+  .conseil-item em { font-style: italic; color: var(--lava); }
+
+  /* ===== CRÉOLE ===== */
+  .creole-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .creole-card {
+    display: flex; flex-direction: column; gap: 3px;
+    background: rgba(255,255,255,.55); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 12px;
+    transition: background .15s, box-shadow .15s;
+  }
+  .creole-card:hover { background: #fff; box-shadow: var(--shadow); }
+  .creole-mot {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 15px; font-weight: 500; color: var(--lava);
+  }
+  .creole-trad { font-size: 12px; color: var(--ink-soft); }
+
+  .circuits-header { padding: 16px 28px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .btn-new {
+    width: 100%; padding: 10px 14px;
+    background: var(--ink); color: #fff;
+    border: none; border-radius: 10px;
+    font-family: inherit; font-size: 13.5px; font-weight: 500;
+    cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 8px; transition: background .15s;
+  }
+  .btn-new:hover { background: var(--accent); }
+  .btn-new .plus { font-size: 16px; line-height: 1; }
+
+  .circuit-list { flex: 1; overflow-y: auto; padding: 0 14px 20px; }
+  .circuit-list::-webkit-scrollbar { width: 6px; }
+  .circuit-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+  .circuit-card {
+    padding: 14px 16px; margin: 0 0 8px;
+    border-radius: 12px; background: rgba(255,255,255,.7);
+    border: 1px solid var(--line); cursor: pointer;
+    transition: all .15s; position: relative;
+  }
+  .circuit-card:hover { background: #fff; border-color: var(--circ-color); }
+  .circuit-card.active { background: #fff; border-color: var(--circ-color); box-shadow: var(--shadow); }
+  .circuit-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .circuit-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--circ-color); flex-shrink: 0; }
+  .circuit-name {
+    font-family: 'Fraunces', serif; font-size: 17px; font-weight: 500;
+    margin: 0; flex: 1; line-height: 1.2;
+  }
+  .circuit-meta { font-size: 11.5px; color: var(--ink-soft); display: flex; gap: 8px; margin-bottom: 6px; }
+  .circuit-note {
+    font-size: 12.5px; color: var(--ink-soft); line-height: 1.35;
+    overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; font-style: italic;
+  }
+  .circuit-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .circuit-actions button {
+    background: transparent; border: 1px solid var(--line);
+    border-radius: 8px; padding: 5px 10px;
+    font-family: inherit; font-size: 11.5px;
+    color: var(--ink-soft); cursor: pointer; transition: all .15s;
+  }
+  .circuit-actions button:hover { border-color: var(--ink); color: var(--ink); }
+  .circuit-actions .btn-show {
+    background: var(--circ-color); color: #fff; border-color: var(--circ-color);
+  }
+  .circuit-actions .btn-show:hover { opacity: .9; color: #fff; }
+  .circuit-actions .btn-del:hover { border-color: var(--lava); color: var(--lava); }
+
+  /* ========= EDITOR ========= */
+  .editor-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(26,42,37,.45);
+    backdrop-filter: blur(4px);
+    z-index: 2000; display: none;
+    align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .editor-backdrop.open { display: flex; }
+  .editor {
+    background: var(--bg); border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(0,0,0,.3);
+    width: 100%; max-width: 780px; max-height: 90vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .editor-head {
+    padding: 20px 24px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .editor-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; margin: 0; }
+  .editor-title em { font-style: italic; color: var(--lava); }
+  .editor-close {
+    background: none; border: none; color: var(--ink-soft);
+    font-size: 24px; cursor: pointer; width: 32px; height: 32px;
+    border-radius: 50%; display: grid; place-items: center;
+  }
+  .editor-close:hover { background: var(--bg-alt); color: var(--ink); }
+
+  .editor-body {
+    padding: 20px 24px; flex: 1; overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  }
+  .editor-col h4 {
+    font-family: 'DM Sans'; font-size: 11px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 0 0 10px; font-weight: 500;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 11.5px; color: var(--ink-soft); margin-bottom: 4px; letter-spacing: 0.03em; }
+  .field input, .field textarea {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; font-family: inherit; font-size: 13.5px;
+    color: var(--ink); outline: none; resize: vertical;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { min-height: 70px; }
+
+  .step-list {
+    border: 1px solid var(--line); border-radius: 10px;
+    background: rgba(255,255,255,.5);
+    min-height: 120px; padding: 6px;
+    max-height: 50vh; overflow-y: auto;
+  }
+  .step-list.empty-state {
+    display: grid; place-items: center;
+    color: var(--ink-soft); font-size: 12.5px;
+    font-style: italic; padding: 30px;
+  }
+  .step {
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 10px; align-items: start;
+    padding: 8px 10px; border-radius: 8px; margin-bottom: 4px;
+    background: #fff; border: 1px solid var(--line);
+  }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--lava); color: #fff;
+    display: grid; place-items: center;
+    font-size: 11.5px; font-weight: 600;
+    font-family: 'Fraunces', serif;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .step-info { min-width: 0; }
+  .step-name {
+    font-family: 'Fraunces', serif; font-size: 14px; font-weight: 500;
+    line-height: 1.2; margin: 0 0 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .step-meta { font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }
+  .step-note {
+    width: 100%; padding: 5px 8px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); font-family: inherit;
+    font-size: 12px; color: var(--ink);
+    outline: none; resize: vertical; min-height: 32px; margin-top: 2px;
+  }
+  .step-note:focus { border-color: var(--accent); background: #fff; }
+  .step-tools { display: flex; flex-direction: column; gap: 2px; }
+  .step-tools button {
+    width: 22px; height: 22px; border: none;
+    background: transparent; color: var(--ink-soft);
+    border-radius: 4px; cursor: pointer;
+    font-size: 14px; line-height: 1;
+    display: grid; place-items: center;
+  }
+  .step-tools button:hover { background: var(--bg-alt); color: var(--ink); }
+  .step-tools .btn-rm:hover { color: var(--lava); }
+  .step-depart { background: rgba(26,42,37,.04); border-color: rgba(26,42,37,.15); }
+
+  /* ========= HIKE ROLE SELECTOR ========= */
+  .role-select {
+    display: flex; gap: 4px; margin-top: 4px;
+  }
+  .role-btn {
+    flex: 1; padding: 3px 6px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: transparent; font-family: inherit;
+    font-size: 10.5px; font-weight: 500;
+    color: var(--ink-soft); cursor: pointer;
+    text-align: center; transition: all .12s;
+    letter-spacing: .02em;
+  }
+  .role-btn:hover { border-color: var(--ink); color: var(--ink); }
+  .role-btn.active-depart { background: #3d5a3a; color: #fff; border-color: #3d5a3a; }
+  .role-btn.active-arrivee { background: var(--lava); color: #fff; border-color: var(--lava); }
+  .role-btn.active-etape { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* Hike pin shapes */
+  .pin-hike-depart {
+    width: 0; height: 0;
+    border-left: 11px solid transparent;
+    border-right: 11px solid transparent;
+    border-bottom: 20px solid var(--pin-color);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.3));
+    cursor: pointer;
+  }
+  .pin-hike-arrivee {
+    width: 22px; height: 22px;
+    background: var(--pin-color);
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    display: grid; place-items: center;
+    color: #fff; font-size: 11px; font-weight: 700;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+
+  .picker-search-wrap { position: relative; margin-bottom: 10px; }
+  .picker-search {
+    width: 100%; padding: 9px 12px 9px 34px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fff; font-family: inherit; font-size: 13px; outline: none;
+  }
+  .picker-search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%); color: var(--ink-soft); font-size: 13px;
+  }
+  .picker-results {
+    border: 1px solid var(--line); border-radius: 10px;
+    background: rgba(255,255,255,.5);
+    max-height: 36vh; overflow-y: auto; padding: 4px;
+  }
+  .pick-item {
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 8px 10px; border-radius: 6px;
+    cursor: pointer; font-size: 13px;
+    transition: background .12s;
+  }
+  .pick-item:hover { background: #fff; }
+  .pick-item.added { opacity: .45; cursor: default; }
+  .pick-item.added:hover { background: transparent; }
+  .pick-marker {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--cat-color); color: #fff;
+    display: grid; place-items: center; font-size: 11px;
+  }
+  .pick-marker svg { width: 12px; height: 12px; display: block; }
+  .pick-name {
+    font-family: 'Fraunces', serif; font-size: 13.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .pick-add {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--ink); color: #fff;
+    border: none; cursor: pointer;
+    font-size: 14px; display: grid; place-items: center; line-height: 1;
+  }
+  .pick-add:hover { background: var(--accent); }
+  .pick-item.added .pick-add {
+    background: var(--bg-alt); color: var(--ink-soft); cursor: default;
+  }
+
+  .editor-foot {
+    padding: 16px 24px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between;
+    align-items: center; gap: 12px; background: var(--bg-alt);
+  }
+  .editor-summary { font-size: 12px; color: var(--ink-soft); }
+  .editor-summary strong {
+    color: var(--ink); font-family: 'Fraunces', serif;
+    font-size: 14px; font-weight: 500;
+  }
+  .btn-secondary, .btn-primary {
+    padding: 9px 18px; border-radius: 999px;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: 1px solid var(--line);
+  }
+  .btn-secondary { background: transparent; color: var(--ink); }
+  .btn-secondary:hover { background: #fff; }
+  .btn-primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+  @media (max-width: 900px) {
+    body { overflow: auto; }
+    .app { grid-template-columns: 1fr; height: auto; }
+    .sidebar { max-height: none; border-right: none; border-bottom: 1px solid var(--line); order: 2; }
+    .map { height: 55vh; order: 1; position: sticky; top: 0; }
+    .list, .circuit-list { max-height: none; }
+    h1 { font-size: 28px; }
+    .header { padding: 18px 20px 0; }
+    .tabs { padding: 0 20px; }
+    .search-wrap { padding: 14px 20px 0; }
+    .search-icon { left: 34px; }
+    .filters { padding: 12px 16px; }
+    .list-meta { padding: 0 20px 8px; }
+    .circuits-header { padding: 14px 20px 12px; }
+    .editor-body { grid-template-columns: 1fr; gap: 18px; }
+    .editor { max-height: 95vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="header">
+      <div class="eyebrow">Île intense · 974</div>
+      <h1>La Réunion,<br><em style="font-size: 0.65em;">Guide de Cynthia et Vincent</em></h1>
+      <p class="sub">Une sélection personnelle — points de vue, sentiers, tables, plages.</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="addresses">Adresses<span class="tab-badge" id="badge-addresses">91</span></button>
+      <button class="tab" data-tab="circuits">Circuits<span class="tab-badge" id="badge-circuits">0</span></button>
+      <button class="tab" data-tab="gout">Gout a li</button>
+      <button class="tab" data-tab="conseils">Conseils</button>
+      <button class="tab" data-tab="creole">Un peu créole</button>
+    </div>
+
+    <div class="panel active" id="panel-addresses">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search" id="search" type="search" placeholder="Rechercher un lieu, une commune…" autocomplete="off">
+      </div>
+      <div class="filters" id="filters">
+        <button class="chip" data-cat="all" style="--chip-color:#2d4a3e"><span class="chip-icon">✦</span>Tout<span class="chip-count" data-count="all"></span></button>
+<button class="chip" data-cat="viewpoint" style="--chip-color:#7a4d2a"><span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10h4"/><circle cx="6" cy="15" r="4"/><circle cx="18" cy="15" r="4"/><path d="M5.5 12.5 8 5h2l-.5 6"/><path d="M18.5 12.5 16 5h-2l.5 6"/></svg></span>Points de vue<span class="chip-count" data-count="viewpoint"></span></button>
+<button class="chip" data-cat="hike" style="--chip-color:#3d5a3a"><span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M12 22V14l-3-4 2-5 3 3h3"/><path d="M9 14l-3 8"/><path d="M14 14l3 4"/><path d="M19 3v18"/></svg></span>Randonnées<span class="chip-count" data-count="hike"></span></button>
+<button class="chip" data-cat="waterfall" style="--chip-color:#3a6b8a"><span class="chip-icon">≋</span>Cascades<span class="chip-count" data-count="waterfall"></span></button>
+<button class="chip" data-cat="beach" style="--chip-color:#2a8a99"><span class="chip-icon">≈</span>Plages<span class="chip-count" data-count="beach"></span></button>
+<button class="chip" data-cat="food" style="--chip-color:#a8472e"><span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h1V2"/><path d="M5 11v11"/><path d="M19 2v20"/><path d="M17 2c-1.5 0-3 2-3 5s1 4 3 4h2V2z"/></svg></span>Restaurants<span class="chip-count" data-count="food"></span></button>
+<button class="chip" data-cat="market" style="--chip-color:#8a5a2a"><span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20l-2 4H4z"/><path d="M4 11v10h16V11"/><path d="M9 21v-5h6v5"/><path d="M2 7l2-4h16l2 4"/></svg></span>Marchés<span class="chip-count" data-count="market"></span></button>
+<button class="chip" data-cat="activity" style="--chip-color:#6a4a8a"><span class="chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 3c8 0 14 6 14 14"/><path d="M5 21c8 0 14-6 14-14"/><path d="M9 12h12"/><path d="M21 12l-3-3"/><path d="M21 12l-3 3"/></svg></span>Activités<span class="chip-count" data-count="activity"></span></button>
+        <button class="chip chip-circuit" data-cat="__circuits__" id="chip-circuits" style="display:none">
+          <span class="chip-icon">◈</span>Mes circuits<span class="chip-count" id="chip-circuits-count"></span>
+        </button>
+        </div>
+      <div class="list-meta"><span id="count-label">91 adresses</span></div>
+      <div class="list" id="list"></div>
+    </div>
+
+    <div class="panel" id="panel-circuits">
+      <div class="circuits-header">
+        <button class="btn-new" id="btn-new-circuit" style="display:none">
+          <span class="plus">＋</span> Créer un circuit
+        </button>
+      </div>
+      <div class="list-meta"><span id="circ-count-label">Aucun circuit</span></div>
+      <div class="circuit-list" id="circuit-list"></div>
+    </div>
+
+    
+
+    <!-- Panel: Gout a li -->
+    <div class="panel" id="panel-gout">
+      <div class="list-meta"><span>Les incontournables</span></div>
+      <div class="list" style="padding: 16px 28px;">
+        <p style="font-size:13px; color:var(--ink-soft); margin:0 0 18px; font-style:italic;">"Gout a li" — Goûte-le ! Les spécialités créoles à ne pas manquer.</p>
+        <div class="gout-grid">
+          <div class="gout-card"><span class="gout-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32" fill="none"><path d="M20 4 C20 4 14 8 10 14 C7 19 8 24 9 26 C10 28 13 30 16 30 C17 30 18 30 20 30 C22 30 23 30 24 30 C27 30 30 28 31 26 C32 24 33 19 30 14 C26 8 20 4 20 4 Z" fill="#e8a650" stroke="#c47a1e" stroke-width="1.2" stroke-linejoin="round"/><path d="M20 4 C20 4 14 8 10 14 L20 14 Z" fill="#d4913a" stroke="#c47a1e" stroke-width="1" stroke-linejoin="round"/><path d="M20 14 L10 14 C8 19 8 24 9 26 C10 28 13 30 16 30 L20 30 Z" fill="#e8a650" stroke="#c47a1e" stroke-width="1" stroke-linejoin="round"/><path d="M20 14 L30 14 C32 19 33 24 31 26 C30 28 27 30 24 30 L20 30 Z" fill="#f0b86a" stroke="#c47a1e" stroke-width="1" stroke-linejoin="round"/><ellipse cx="20" cy="31" rx="7" ry="2" fill="#d4913a" opacity="0.3"/><circle cx="16" cy="12" r="1" fill="#c47a1e" opacity="0.5"/><circle cx="22" cy="10" r="0.8" fill="#c47a1e" opacity="0.4"/><circle cx="14" cy="21" r="1" fill="#c47a1e" opacity="0.4"/><circle cx="24" cy="22" r="1.2" fill="#c47a1e" opacity="0.35"/><circle cx="19" cy="26" r="0.8" fill="#c47a1e" opacity="0.4"/></svg></span><div><strong>Samoussas</strong><p>Petits triangles frits fourrés aux légumes ou à la viande, incontournables à l'apéro.</p></div></div>
+          <div class="gout-card"><span class="gout-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32" fill="none"><ellipse cx="20" cy="34" rx="8" ry="2" fill="#c47a1e" opacity="0.25"/><ellipse cx="20" cy="20" rx="12" ry="8" fill="#e8a650" stroke="#c47a1e" stroke-width="1.2"/><ellipse cx="20" cy="20" rx="5" ry="3.5" fill="#f3c97a" stroke="#c47a1e" stroke-width="1" stroke-dasharray="1.5 1.2"/><ellipse cx="20" cy="20" rx="12" ry="8" fill="none" stroke="#c47a1e" stroke-width="1.2"/><path d="M10 18 Q12 14 16 15 Q18 13 20 15 Q22 13 24 15 Q28 14 30 18" stroke="#c47a1e" stroke-width="0.9" fill="none" stroke-linecap="round"/><path d="M10 22 Q12 26 16 25 Q18 27 20 25 Q22 27 24 25 Q28 26 30 22" stroke="#c47a1e" stroke-width="0.9" fill="none" stroke-linecap="round"/><circle cx="13" cy="20" r="0.8" fill="#c47a1e" opacity="0.5"/><circle cx="27" cy="20" r="0.8" fill="#c47a1e" opacity="0.5"/><circle cx="17" cy="17" r="0.6" fill="#d4913a" opacity="0.6"/><circle cx="23" cy="23" r="0.6" fill="#d4913a" opacity="0.6"/></svg></span><div><strong>Bonbon piment</strong><p>Beignets de lentilles épicés, croustillants et relevés — la collation créole par excellence.</p></div></div>
+          <div class="gout-card"><span class="gout-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32" fill="none"><ellipse cx="20" cy="35" rx="7" ry="1.5" fill="#c47a1e" opacity="0.2"/><rect x="10" y="22" width="20" height="10" rx="4" fill="#e8c9a0" stroke="#b89060" stroke-width="1"/><path d="M10 26 Q20 30 30 26" stroke="#b89060" stroke-width="0.8" fill="none"/><path d="M13 22 C12 19 11 16 13 14 Q15 12 17 13 Q18 11 20 12 Q22 11 23 13 Q25 12 27 14 C29 16 28 19 27 22" fill="#f0e0c0" stroke="#b89060" stroke-width="1" stroke-linejoin="round"/><path d="M13 22 C12 19 11 16 13 14 Q14 16 15 18 Q16 20 17 22" fill="#e8d0a8" stroke="none"/><path d="M27 22 C28 19 29 16 27 14 Q26 16 25 18 Q24 20 23 22" fill="#e8d0a8" stroke="none"/><path d="M13 14 Q15 12 17 13 Q18 11 20 12 Q22 11 23 13 Q25 12 27 14" fill="#d4c090" stroke="#b89060" stroke-width="0.9" stroke-linejoin="round"/><path d="M15 18 Q17 17 20 18 Q23 17 25 18" stroke="#b89060" stroke-width="0.7" fill="none" stroke-linecap="round"/><circle cx="16" cy="15" r="0.7" fill="#b89060" opacity="0.5"/><circle cx="24" cy="15" r="0.7" fill="#b89060" opacity="0.5"/><circle cx="20" cy="14" r="0.6" fill="#b89060" opacity="0.4"/></svg></span><div><strong>Bouchons</strong><p>Raviolis vapeur à la viande de porc, servis avec une sauce soja locale (sauce siave).</p></div></div>
+          <div class="gout-card"><span class="gout-icon">🍖</span><div><strong>Sarcives</strong><p>Côtes de porc marinées et grillées, sucrées-salées, à dévorer sans retenue.</p></div></div>
+          <div class="gout-card"><span class="gout-icon">🥧</span><div><strong>Gato patat</strong><p>Gâteau de patate douce, moelleux et légèrement sucré — street food typique des marchés.</p></div></div>
+          <div class="gout-card"><span class="gout-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32" fill="none"><path d="M20 36 C18 34 14 30 12 26 C10 22 11 18 13 16 C15 14 17 14 18 15" stroke="#2d7a3a" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M13 16 Q8 12 9 8 Q10 5 13 6 Q11 10 14 13" fill="#4a9a52" stroke="#2d7a3a" stroke-width="0.8"/><path d="M13 6 Q16 4 18 7 Q17 10 14 13 Q11 10 13 6 Z" fill="#5ab060" stroke="#2d7a3a" stroke-width="0.9"/><path d="M18 15 Q22 10 28 11 Q31 13 29 17 Q25 20 20 18" fill="#4aaa52" stroke="#2d7a3a" stroke-width="0.9"/><path d="M29 17 Q34 15 35 19 Q34 23 29 22 Q25 20 29 17 Z" fill="#5ab060" stroke="#2d7a3a" stroke-width="0.9"/><path d="M20 18 Q22 22 26 26 Q22 28 18 25 Q16 22 20 18 Z" fill="#4aaa52" stroke="#2d7a3a" stroke-width="0.9"/><path d="M13 16 Q17 13 20 18" stroke="#2d7a3a" stroke-width="1" stroke-linecap="round" fill="none"/><path d="M14 22 Q18 20 20 24" stroke="#3d8a45" stroke-width="0.7" stroke-linecap="round" fill="none"/><path d="M18 28 Q22 26 24 30" stroke="#3d8a45" stroke-width="0.7" stroke-linecap="round" fill="none"/></svg></span><div><strong>Brèdes</strong><p>Feuilles de légumes (morelle, chouchou…) sautées à l'ail, accompagnement traditionnel du riz créole.</p></div></div>
+          <div class="gout-card"><span class="gout-icon">🍍</span><div><strong>Ananas Victoria</strong><p>Le meilleur ananas du monde — minuscule, ultra-sucré, juteux. À goûter frais et bien froid.</p></div></div>
+          <div class="gout-card"><span class="gout-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32" fill="none"><ellipse cx="20" cy="35" rx="9" ry="2" fill="#c47a1e" opacity="0.2"/><ellipse cx="20" cy="27" rx="13" ry="5" fill="#d4913a" stroke="#b07020" stroke-width="1"/><ellipse cx="20" cy="26" rx="13" ry="5" fill="#e8a650" stroke="#b07020" stroke-width="1.1"/><ellipse cx="16" cy="24.5" rx="2.5" ry="1.8" fill="#c47a1e" opacity="0.7"/><ellipse cx="22" cy="24" rx="2.2" ry="1.6" fill="#c47a1e" opacity="0.6"/><ellipse cx="26" cy="25" rx="2" ry="1.5" fill="#c47a1e" opacity="0.6"/><ellipse cx="13" cy="25.5" rx="1.8" ry="1.3" fill="#c47a1e" opacity="0.5"/><path d="M8 22 Q9 18 12 16 Q16 14 20 14 Q24 14 28 16 Q31 18 32 22 Q28 24 20 24 Q12 24 8 22 Z" fill="#f0b86a" stroke="#b07020" stroke-width="1.1"/><path d="M10 20 Q14 17 20 17 Q26 17 30 20" stroke="#d4913a" stroke-width="0.8" fill="none" stroke-linecap="round"/><circle cx="15" cy="18" r="1.2" fill="#c47a1e" opacity="0.6"/><circle cx="20" cy="16.5" r="1" fill="#c47a1e" opacity="0.5"/><circle cx="25" cy="18" r="1.2" fill="#c47a1e" opacity="0.6"/></svg></span><div><strong>Pâté créole</strong><p>Feuilleté salé ou sucré fourré à la viande épicée ou au chouchou. Salé au déjeuner, sucré au goûter.</p></div></div>
+          <div class="gout-card"><span class="gout-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32" fill="none"><ellipse cx="20" cy="35" rx="10" ry="1.5" fill="#8a6030" opacity="0.2"/><path d="M6 22 Q6 18 20 17 Q34 18 34 22 L33 27 Q33 31 20 31 Q7 31 7 27 Z" fill="#d4a060" stroke="#a07030" stroke-width="1"/><path d="M6 22 Q6 18 20 17 Q34 18 34 22 Q33 24 20 24 Q7 24 6 22 Z" fill="#f0c880" stroke="#a07030" stroke-width="1"/><path d="M8 23 Q14 25 20 24.5 Q26 25 32 23" stroke="#a07030" stroke-width="0.7" fill="none" stroke-linecap="round" opacity="0.6"/><rect x="10" y="21" width="5" height="3" rx="1.5" fill="#d4804a" opacity="0.85"/><rect x="17" y="21" width="5" height="3" rx="1.5" fill="#d4804a" opacity="0.85"/><rect x="24" y="21" width="5" height="3" rx="1.5" fill="#d4804a" opacity="0.85"/><path d="M10 21.5 Q12.5 20 15 21.5" stroke="#b06030" stroke-width="0.5" fill="none"/><path d="M17 21.5 Q19.5 20 22 21.5" stroke="#b06030" stroke-width="0.5" fill="none"/><path d="M24 21.5 Q26.5 20 29 21.5" stroke="#b06030" stroke-width="0.5" fill="none"/><path d="M7 22.5 Q8 19 10 17 Q15 15 20 15 Q25 15 30 17 Q32 19 33 22.5" fill="#e8c070" stroke="#a07030" stroke-width="1" opacity="0.6"/></svg></span><div><strong>Américain bouchon / sarcives</strong><p>Le fast-food local : pain baguette garni de bouchons ou sarcives avec rougail tomate et crudités.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Conseils -->
+    <div class="panel" id="panel-conseils">
+      <div class="list-meta"><span>Tips pratiques</span></div>
+      <div class="list" style="padding: 16px 28px;">
+        <div class="conseil-section">
+          <h3 class="conseil-title">🚗 Déplacements</h3>
+          <div class="conseil-item"><span class="conseil-bullet">⚠️</span><div><strong>Embouteillages</strong><p>Évitez absolument les heures de pointe. L'île se paralyse le matin et le soir en semaine.</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet">🌅</span><div><strong>Partir tôt</strong><p>Idéalement avant 9h pour profiter des panoramas — à partir de midi, les nuages bouchent souvent la vue.</p></div></div>
+        </div>
+        <div class="conseil-section">
+          <h3 class="conseil-title">☀️ Santé & Protection</h3>
+          <div class="conseil-item"><span class="conseil-bullet">🧴</span><div><strong>Crème solaire</strong><p><em>"Soleil i pouak !"</em> — le soleil tape fort. Protégez-vous même par temps nuageux.</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet">🦟</span><div><strong>Anti-moustiques</strong><p>Le spray est indispensable, surtout dans les zones humides et en altitude modérée.</p></div></div>
+        </div>
+        <div class="conseil-section">
+          <h3 class="conseil-title">🏔️ Cirques</h3>
+          <div class="conseil-item"><span class="conseil-bullet">🚶</span><div><strong>Cirque de Mafate</strong><p>Minimum 2 jours. Accessible uniquement à pied. Garez-vous au parking payant du Col des Bœufs (3€/j, 12€/nuit). Réservez impérativement un gîte au village de <em>La Nouvelle</em> (pas les autres villages). Descente le lendemain. Compter ~3h de marche.</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet">🚗</span><div><strong>Cirque de Cilaos</strong><p>Minimum 2 jours. Accessible en voiture (400 virages !). Prévoir au moins une nuit sur place dans un gîte (réserver à l'avance). Marché forain le dimanche matin.</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet">📸</span><div><strong>Cirque de Salazie</strong><p>Faisable en 1 journée en voiture. Arrêt photo : cascade Voile de la Mariée sur le trajet. Visite de Hell-Bourg. Tous les restaurants de Hell-Bourg sont très bons.</p></div></div>
+        </div>
+        <div class="conseil-section">
+          <h3 class="conseil-title">🏛️ Activités & Visites</h3>
+          <div class="conseil-item"><span class="conseil-bullet"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none"><!-- Usine canne à sucre --><rect x="2" y="13" width="20" height="9" rx="1" fill="#8B6914" stroke="#5a4010" stroke-width="1"/><rect x="4" y="15" width="3" height="7" fill="#a07820"/><rect x="10" y="15" width="3" height="7" fill="#a07820"/><rect x="16" y="15" width="3" height="7" fill="#a07820"/><rect x="7" y="10" width="5" height="12" rx="0.5" fill="#c8941a" stroke="#5a4010" stroke-width="1"/><rect x="13" y="8" width="5" height="14" rx="0.5" fill="#c8941a" stroke="#5a4010" stroke-width="1"/><rect x="8" y="6" width="2" height="5" rx="1" fill="#666" stroke="#444" stroke-width="0.8"/><rect x="14" y="3" width="2" height="6" rx="1" fill="#666" stroke="#444" stroke-width="0.8"/><path d="M8 6 Q9 4 10 5" stroke="#999" stroke-width="0.8" fill="none" stroke-linecap="round"/><path d="M14 3 Q15 1 16 2" stroke="#999" stroke-width="0.8" fill="none" stroke-linecap="round"/><!-- tiges canne --><path d="M1 13 Q2 9 3 11 Q4 7 5 9 Q6 5 7 8" stroke="#4a8a2a" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M18 10 Q19 7 20 9 Q21 5 22 8" stroke="#4a8a2a" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg></span><div><strong>Usine sucrière Bois Rouge – Saint-André</strong><p>Usine de canne à sucre + dégustation de rhum. 14€/adulte, 8€ (12-17 ans). Préférez les créneaux du soir pour l'éclairage.</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none"><!-- Gousse de vanille de Bourbon --><path d="M7 21 C6 19 5 15 6 10 C7 5 10 2 12 2 C14 2 15 4 15 7 C15 12 13 17 12 21" stroke="#3d2a0a" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M7 21 C8 19 10 17 12 21" stroke="#3d2a0a" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M6.5 10.5 C8 9 10 8.5 13 9" stroke="#6b4515" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M6.2 13 C8 12 10.5 11.5 13.5 12" stroke="#6b4515" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M6.5 15.5 C8 15 10 14.5 13 15" stroke="#6b4515" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M7 18 C8.5 17.5 10 17.5 12.5 18" stroke="#6b4515" stroke-width="0.9" fill="none" stroke-linecap="round"/><!-- fleur vanille --><path d="M15 6 C16 4 18 3 19 4 C20 5 19 7 17 7 C19 7 20 9 19 10 C18 11 16 10 15 8" stroke="#9ab840" stroke-width="1" fill="none" stroke-linecap="round"/><circle cx="15.5" cy="7" r="1.2" fill="#f5e060" stroke="#9ab840" stroke-width="0.8"/></svg></span><div><strong>Vanilleraie – Sainte-Suzanne</strong><p>Domaine créole de culture de la vanille. 8€/adulte, 4€ (10-16 ans), gratuit -10 ans.</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none"><!-- Tortue de mer --><ellipse cx="12" cy="13" rx="8" ry="5.5" fill="#5a8a3a" stroke="#3a6020" stroke-width="1"/><ellipse cx="12" cy="13" rx="5" ry="3.5" fill="#6aa040" stroke="#3a6020" stroke-width="0.7"/><!-- motif carapace --><path d="M8 11 Q12 9.5 16 11" stroke="#3a6020" stroke-width="0.7" fill="none"/><path d="M7.5 13 Q12 14 16.5 13" stroke="#3a6020" stroke-width="0.7" fill="none"/><path d="M9 11 L10 14" stroke="#3a6020" stroke-width="0.6" fill="none"/><path d="M12 10 L12 15" stroke="#3a6020" stroke-width="0.6" fill="none"/><path d="M15 11 L14 14" stroke="#3a6020" stroke-width="0.6" fill="none"/><!-- tête --><ellipse cx="19.5" cy="11" rx="2.2" ry="1.8" fill="#7ab050" stroke="#3a6020" stroke-width="1"/><circle cx="20.2" cy="10.4" r="0.4" fill="#1a3010"/><!-- nageoires --><path d="M8 10 C6 8 4 9 4 11 C5 10 7 10.5 8 11.5" fill="#5a8a3a" stroke="#3a6020" stroke-width="0.8"/><path d="M8 16 C6 17 4 17 4.5 15 C5.5 15.5 7 15.5 8 14.5" fill="#5a8a3a" stroke="#3a6020" stroke-width="0.8"/><path d="M16 16 C17.5 18 17 20 15.5 19 C15.5 17.5 15.5 16 16 15" fill="#5a8a3a" stroke="#3a6020" stroke-width="0.8"/><!-- queue --><path d="M4.5 13 C3 13.5 2 14 2.5 13 C3 12 4 12.5 4.5 13" fill="#5a8a3a" stroke="#3a6020" stroke-width="0.7"/></svg></span><div><strong>Kélonia – Saint-Leu</strong><p>Observatoire des tortues marines. 9€/adulte, 4€ (4-12 ans).</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet">📜</span><div><strong>Stella Matutina – Saint-Leu</strong><p>Musée sur l'histoire de La Réunion. 9€/adulte, 6€ (4-12 ans).</p></div></div>
+          <div class="conseil-item"><span class="conseil-bullet"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" fill="none"><!-- Bouteille de rhum --><path d="M9 18 L9 10 L8 8 L8 6 Q10 4 12 4 Q14 4 16 6 L16 8 L15 10 L15 18 Q15 21 12 21 Q9 21 9 18 Z" fill="#c8781a" stroke="#8a4a08" stroke-width="1"/><path d="M9 14 Q12 15.5 15 14" stroke="#8a4a08" stroke-width="0.8" fill="none"/><path d="M9 16.5 Q12 18 15 16.5" stroke="#8a4a08" stroke-width="0.7" fill="none"/><!-- reflet --><path d="M10 8 Q10.5 7 11 9 Q11.5 12 11 16" stroke="rgba(255,220,150,0.6)" stroke-width="1.2" fill="none" stroke-linecap="round"/><!-- col --><rect x="10.5" y="2.5" width="3" height="4" rx="1" fill="#b06010" stroke="#8a4a08" stroke-width="1"/><!-- bouchon --><rect x="10" y="1.5" width="4" height="2" rx="0.8" fill="#444" stroke="#222" stroke-width="0.8"/><!-- étiquette --><rect x="9.5" y="10.5" width="5" height="4" rx="0.5" fill="#f5e8c0" stroke="#8a4a08" stroke-width="0.7"/><text x="12" y="13.2" font-size="2.2" fill="#8a4a08" text-anchor="middle" font-family="serif" font-weight="bold">RHUM</text></svg></span><div><strong>La Saga du Rhum – Saint-Pierre</strong><p>Visite et dégustation de rhum. 12€/adulte, 9€ (6-16 ans).</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Un peu créole -->
+    <div class="panel" id="panel-creole">
+      <div class="list-meta"><span>Le lexique du voyage</span></div>
+      <div class="list" style="padding: 16px 28px;">
+        <p style="font-size:13px; color:var(--ink-soft); margin:0 0 18px; font-style:italic;">Quelques mots créoles réunionnais pour briser la glace avec les locaux 🌺</p>
+        <div class="creole-grid">
+          <div class="creole-card"><span class="creole-mot">Komen i lé ?</span><span class="creole-trad">Comment ça va ?</span></div>
+          <div class="creole-card"><span class="creole-mot">Lé bon</span><span class="creole-trad">D'accord / C'est bon</span></div>
+          <div class="creole-card"><span class="creole-mot">Alon bat caré</span><span class="creole-trad">On va se balader ?</span></div>
+          <div class="creole-card"><span class="creole-mot">Kosalafé ?</span><span class="creole-trad">Qu'est-ce qui se passe ? / Quoi de neuf ?</span></div>
+          <div class="creole-card"><span class="creole-mot">Marmailles</span><span class="creole-trad">Les enfants</span></div>
+          <div class="creole-card"><span class="creole-mot">Gramoune</span><span class="creole-trad">Personne âgée</span></div>
+          <div class="creole-card"><span class="creole-mot">Kafrine</span><span class="creole-trad">Réunionnaise noire ou métisse</span></div>
+          <div class="creole-card"><span class="creole-mot">La dodo</span><span class="creole-trad">La bière locale de La Réunion</span></div>
+          <div class="creole-card"><span class="creole-mot">Sauce siave</span><span class="creole-trad">Sauce soja</span></div>
+          <div class="creole-card"><span class="creole-mot">Bringelle</span><span class="creole-trad">Aubergine</span></div>
+          <div class="creole-card"><span class="creole-mot">Les savates</span><span class="creole-trad">Les claquettes / tongs</span></div>
+          <div class="creole-card"><span class="creole-mot">Un palto</span><span class="creole-trad">Une veste</span></div>
+          <div class="creole-card"><span class="creole-mot">Marché forain</span><span class="creole-trad">Marché de fruits et légumes (pas une fête foraine !)</span></div>
+          <div class="creole-card"><span class="creole-mot">Soleil i pouak !</span><span class="creole-trad">Le soleil tape fort !</span></div>
+          <div class="creole-card"><span class="creole-mot">Zamal</span><span class="creole-trad">Cannabis</span></div>
+          <div class="creole-card" style="border-color: var(--lava); background: rgba(168,71,46,.06);"><span class="creole-mot">Zoreil</span><span class="creole-trad">C'est vous ! 😄 Les gens venant de l'hexagone</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-bar" style="display:none">
+      <button id="btn-export" title="Télécharger vos tips et circuits">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporter
+      </button>
+      <button id="btn-import" title="Charger un fichier de tips et circuits">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Importer
+      </button>
+      <button id="btn-freeze" title="Générer une version figée à partager">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Version figée
+      </button>
+      <input type="file" id="import-file" accept="application/json,.json" style="display:none">
+    </div>
+  </aside>
+
+  <div class="map">
+    <div id="map"></div>
+    <div class="map-overlay" id="overlay"><strong>91</strong> lieux affichés</div>
+  </div>
+</div>
+
+<div class="editor-backdrop" id="editor">
+  <div class="editor">
+    <div class="editor-head">
+      <h2 class="editor-title" id="editor-title">Nouveau <em>circuit</em></h2>
+      <button class="editor-close" id="editor-close" aria-label="Fermer">×</button>
+    </div>
+    <div class="editor-body">
+      <div class="editor-col">
+        <h4 id="editor-left-title">Le circuit</h4>
+        <div class="field">
+          <label>Nom</label>
+          <input id="circ-name" type="text" placeholder="Ex. Journée volcan & Sud sauvage" maxlength="80">
+        </div>
+        <div class="field">
+          <label>Commentaire global</label>
+          <textarea id="circ-note" placeholder="Une journée pour…" maxlength="500"></textarea>
+        </div>
+        <h4 style="margin-top: 18px" id="editor-steps-title">Étapes (dans l'ordre)</h4>
+        <div class="step-list" id="step-list"></div>
+      </div>
+
+      <div class="editor-col">
+        <h4>Ajouter une adresse</h4>
+        <div class="picker-search-wrap">
+          <span class="picker-search-icon">⌕</span>
+          <input class="picker-search" id="picker-search" type="search" placeholder="Rechercher parmi les 91 adresses…" autocomplete="off">
+        </div>
+        <div class="picker-results" id="picker-results"></div>
+      </div>
+    </div>
+    <div class="editor-foot">
+      <div class="editor-summary"><strong id="summary-count">0</strong> étape<span id="summary-plural"></span></div>
+      <div style="display:flex; gap:8px">
+        <button class="btn-secondary" id="btn-cancel">Annuler</button>
+        <button class="btn-primary" id="btn-save">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PLACES = [{"name":"Le cirque de mafate","type":"Site naturel","address":"Le cirque de mafate, La Réunion","lat":-21.0743263,"lng":55.42494929999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+cirque+de+mafate,+La+Réunion","cat":"activity"},{"name":"Plage du Lux","type":"Plage","address":"Plage du Lux, Saint-Paul 97460, La Réunion","lat":-21.0899761,"lng":55.2300991,"gmaps":"https://www.google.com/maps/search/?api=1&query=Plage+du+Lux,+Saint-Paul+97460,+La+Réunion","cat":"beach"},{"name":"Termes salazie","type":"Site historique","address":"Anciens Thermes de Salazie, Salazie 97433, La Réunion","lat":-21.0671775,"lng":55.5152648,"gmaps":"https://www.google.com/maps/search/?api=1&query=Anciens+Thermes+de+Salazie,+Salazie+97433,+La+Réunion","cat":"activity"},{"name":"Point de vue Plaine des sables","type":"Point de vue","address":"Point de vue de la Plaine des Sables, Le Tampon, La Réunion","lat":-21.2315663,"lng":55.6486864,"gmaps":"https://www.google.com/maps/search/?api=1&query=Point+de+vue+de+la+Plaine+des+Sables,+Le+Tampon,+La+Réunion","cat":"viewpoint"},{"name":"Le Métis","type":"Restaurant","address":"Le Métis, 378 bis Route Nationale 2, Sainte-Rose 97439, La Réunion","lat":-21.159846,"lng":55.8237242,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Métis,+378+bis+Route+Nationale+2,+Sainte-Rose+97439,+La+Réunion","cat":"food"},{"name":"Sentier du Rempart","type":"Randonnée","address":"W9RJ+XP Sentier du Rempart, Saint-Paul, La Réunion","lat":-21.0575749,"lng":55.3818558,"gmaps":"https://www.google.com/maps/search/?api=1&query=W9RJ+XP+Sentier+du+Rempart,+Saint-Paul,+La+Réunion","cat":"hike"},{"name":"Anse des Cascades","type":"Site naturel","address":"Anse des Cascades, Sainte Rose, La Réunion","lat":-21.1836568,"lng":55.8268819,"gmaps":"https://www.google.com/maps/search/?api=1&query=Anse+des+Cascades,+Sainte+Rose,+La+Réunion","cat":"activity"},{"name":"Voile de la mariée","type":"Cascade / Point de vue","address":"Parking 7 cascades, 26 Rte Departementale 52, Salazie 97433, La Réunion","lat":-21.0393203,"lng":55.5361227,"gmaps":"https://www.google.com/maps/search/?api=1&query=Parking+7+cascades,+26+Rte+Departementale+52,+Salazie+97433,+La+Réunion","cat":"waterfall"},{"name":"Belvédère du Maïdo","type":"Point de vue","address":"Belvédère du Maïdo, 420 Rte Forestière n°8 du Maïdo, Saint-Paul 97460, La Réunion","lat":-21.0706536,"lng":55.3878917,"gmaps":"https://www.google.com/maps/search/?api=1&query=Belvédère+du+Maïdo,+420+Rte+Forestière+n°8+du+Maïdo,+Saint-Paul+97460,+La+Réunion","cat":"viewpoint"},{"name":"Le Gouffre","type":"Site naturel","address":"Le Gouffre de l'Étang-Salé, 3 Rue Des Olivines, 97410, La Réunion","lat":-21.2801323,"lng":55.3409195,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Gouffre+de+l'Étang-Salé,+3+Rue+Des+Olivines,+97410,+La+Réunion","cat":"activity"},{"name":"Piton bois de nefles","type":"Point de vue","address":"Point de vue du Piton Bois de Nèfles, Rte du Piton, La Réunion","lat":-20.9391351,"lng":55.4665881,"gmaps":"https://www.google.com/maps/search/?api=1&query=Point+de+vue+du+Piton+Bois+de+Nèfles,+Rte+du+Piton,+La+Réunion","cat":"viewpoint"},{"name":"Cascade Grand Bassin","type":"Cascade","address":"Cascade du voile de la mariée Grand Bassin, Le Tampon 97418, La Réunion","lat":-21.1844055,"lng":55.5299567,"gmaps":"https://www.google.com/maps/search/?api=1&query=Cascade+du+voile+de+la+mariée+Grand+Bassin,+Le+Tampon+97418,+La+Réunion","cat":"waterfall"},{"name":"Au vieux Quimper","type":"Restaurant","address":"Au vieux Quimper, Place du marché, Rue du St Laurent, Saint-Paul 97434, La Réunion","lat":-21.0527473,"lng":55.22579709999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Au+vieux+Quimper,+Place+du+marché,+Rue+du+St+Laurent,+Saint-Paul+97434,+La+Réunion","cat":"food"},{"name":"CAP JAUNE","type":"Randonnée / Point de vue","address":"CAP JAUNE, Chem. Terre Rouge, Saint-Joseph 97480, La Réunion","lat":-21.3832485,"lng":55.6665461,"gmaps":"https://www.google.com/maps/search/?api=1&query=CAP+JAUNE,+Chem.+Terre+Rouge,+Saint-Joseph+97480,+La+Réunion","cat":"hike"},{"name":"La Saga du Rhum","type":"Musée","address":"La Saga du Rhum, Chem. Fredeline, Saint-Pierre 97410, La Réunion","lat":-21.3123309,"lng":55.4657345,"gmaps":"https://www.google.com/maps/search/?api=1&query=La+Saga+du+Rhum,+Chem.+Fredeline,+Saint-Pierre+97410,+La+Réunion","cat":"activity"},{"name":"Les balancoires","type":"Bar / Loisirs","address":"Les balancoires sunset club, Terrain le Récif, Rue De La Plage, 97434, La Réunion","lat":-21.0673313,"lng":55.2213784,"gmaps":"https://www.google.com/maps/search/?api=1&query=Les+balancoires+sunset+club,+Terrain+le+Récif,+Rue+De+La+Plage,+97434,+La+Réunion","cat":"food"},{"name":"Carré Cathedrale","type":"Restaurant","address":"Le Carré Cathédral, 34-36 Rue Jean Chatel, Saint-Denis 97400, La Réunion","lat":-20.8768726,"lng":55.44899419999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Carré+Cathédral,+34-36+Rue+Jean+Chatel,+Saint-Denis+97400,+La+Réunion","cat":"food"},{"name":"Roche ecrite","type":"Randonnée","address":"Roche Écrite","lat":-21.014722,"lng":55.460833,"gmaps":"https://www.google.com/maps/search/?api=1&query=Roche+Écrite","cat":"hike"},{"name":"La mare a joncs","type":"Site naturel","address":"La mare a joncs, La Réunion","lat":-21.1338908,"lng":55.476634,"gmaps":"https://www.google.com/maps/search/?api=1&query=La+mare+a+joncs,+La+Réunion","cat":"activity"},{"name":"Vapiano","type":"Restaurant","address":"Restaurant Vapiano Saint Denis, 10 Pl. Sarda Garriga, Saint-Denis 97400, La Réunion","lat":-20.873448,"lng":55.448286,"gmaps":"https://www.google.com/maps/search/?api=1&query=Restaurant+Vapiano+Saint+Denis,+10+Pl.+Sarda+Garriga,+Saint-Denis+97400,+La+Réunion","cat":"food"},{"name":"Col des Boeufs","type":"Randonnée","address":"Col des Boeufs, La Possession, La Réunion","lat":-21.0712355,"lng":55.448285,"gmaps":"https://www.google.com/maps/search/?api=1&query=Col+des+Boeufs,+La+Possession,+La+Réunion","cat":"hike"},{"name":"Kélonia","type":"Musée / Aquarium","address":"Kélonia, 46 Rue du Général de Gaulle, Saint-Leu 97436, La Réunion","lat":-21.1525584,"lng":55.2801009,"gmaps":"https://www.google.com/maps/search/?api=1&query=Kélonia,+46+Rue+du+Général+de+Gaulle,+Saint-Leu+97436,+La+Réunion","cat":"activity"},{"name":"Telepherique chaudron","type":"Téléphérique","address":"Chaudron","lat":-20.89384,"lng":55.48748999999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Chaudron","cat":"activity"},{"name":"cratère commerson","type":"Point de vue","address":"Point de Vue sur le Cratère Commerson, Saint-Joseph, La Réunion","lat":-21.2072734,"lng":55.6424376,"gmaps":"https://www.google.com/maps/search/?api=1&query=Point+de+Vue+sur+le+Cratère+Commerson,+Saint-Joseph,+La+Réunion","cat":"viewpoint"},{"name":"Roche Vert Bouteille","type":"Site naturel","address":"Roche Verre Bouteille, Unnamed Road, Réunion, La Réunion","lat":-20.9877311,"lng":55.3949326,"gmaps":"https://www.google.com/maps/search/?api=1&query=Roche+Verre+Bouteille,+Unnamed+Road,+Réunion,+La+Réunion","cat":"activity"},{"name":"Marché forrain Chaudron","type":"Marché","address":"Marché Forain du Chaudron, Rue Jean de Villele, Saint-Denis 97490, La Réunion","lat":-20.8913291,"lng":55.4877958,"gmaps":"https://www.google.com/maps/search/?api=1&query=Marché+Forain+du+Chaudron,+Rue+Jean+de+Villele,+Saint-Denis+97490,+La+Réunion","cat":"market"},{"name":"Depart sentier Bassin Boeuf","type":"Randonnée","address":"Snack bassin boeuf, Bassin Boeuf, Sainte-Suzanne 97441, La Réunion","lat":-20.947767,"lng":55.5836815,"gmaps":"https://www.google.com/maps/search/?api=1&query=Snack+bassin+boeuf,+Bassin+Boeuf,+Sainte-Suzanne+97441,+La+Réunion","cat":"hike"},{"name":"Bassin de Manapany","type":"Site naturel","address":"Bassin de Manapany, La Réunion","lat":-21.3732729,"lng":55.5882632,"gmaps":"https://www.google.com/maps/search/?api=1&query=Bassin+de+Manapany,+La+Réunion","cat":"activity"},{"name":"Le Bar à Choix","type":"Bar","address":"Le Bar à Choix, 9 N1, Saint-Denis 97400, La Réunion","lat":-20.8720791,"lng":55.4494033,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Bar+à+Choix,+9+N1,+Saint-Denis+97400,+La+Réunion","cat":"food"},{"name":"Plage de Saint-Leu","type":"Plage","address":"Plage de Saint-Leu, La Réunion","lat":-21.1786867,"lng":55.2866924,"gmaps":"https://www.google.com/maps/search/?api=1&query=Plage+de+Saint-Leu,+La+Réunion","cat":"beach"},{"name":"Depart sentier enclos","type":"Randonnée","address":"Volcan-belvédère, Sainte-Rose 97439, La Réunion","lat":-21.2226135,"lng":55.6891903,"gmaps":"https://www.google.com/maps/search/?api=1&query=Volcan-belvédère,+Sainte-Rose+97439,+La+Réunion","cat":"hike"},{"name":"La mer cassée","type":"Site naturel","address":"La mer cassée, 99-105 Route Nationale 2 Mare Longue, La Réunion","lat":-21.3628513,"lng":55.7555214,"gmaps":"https://www.google.com/maps/search/?api=1&query=La+mer+cassée,+99-105+Route+Nationale+2+Mare+Longue,+La+Réunion","cat":"activity"},{"name":"DUOCEAN","type":"Plongée","address":"DUOCEAN les baleines et les dauphins à portée de palmes - Rendez-vous de St GILLES, port de, 97434, La Réunion","lat":-21.0547343,"lng":55.2252766,"gmaps":"https://www.google.com/maps/search/?api=1&query=DUOCEAN+les+baleines+et+les+dauphins+à+portée+de+palmes+-+Rendez-vous+de+St+GILLES,+port+de,+97434,+La+Réunion","cat":"beach"},{"name":"Le Cayenne","type":"Site naturel","address":"Le Cayenne, Chem. la Cayenne, Sainte-Rose 97439, La Réunion","lat":-21.1338586,"lng":55.80664429999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Cayenne,+Chem.+la+Cayenne,+Sainte-Rose+97439,+La+Réunion","cat":"activity"},{"name":"Temple bois rouge","type":"Site religieux","address":"Parking du Temple de Bois Rouge, Saint-André 97440, La Réunion","lat":-20.9165256,"lng":55.6310754,"gmaps":"https://www.google.com/maps/search/?api=1&query=Parking+du+Temple+de+Bois+Rouge,+Saint-André+97440,+La+Réunion","cat":"activity"},{"name":"La Capitainerie","type":"Restaurant / Bar","address":"La Capitainerie, 1 Quai Gilbert, La Réunion","lat":-21.0085115,"lng":55.269209,"gmaps":"https://www.google.com/maps/search/?api=1&query=La+Capitainerie,+1+Quai+Gilbert,+La+Réunion","cat":"food"},{"name":"Cascade de Grand Galet","type":"Cascade","address":"Cascade de Grand Galet, 43 Rte de Grand Galet, 97480, La Réunion","lat":-21.3116237,"lng":55.6418507,"gmaps":"https://www.google.com/maps/search/?api=1&query=Cascade+de+Grand+Galet,+43+Rte+de+Grand+Galet,+97480,+La+Réunion","cat":"waterfall"},{"name":"Kaz Volcan","type":"Restaurant","address":"La Case Volcan, 123 A Route Nationale 2 le Tremblet, Saint-Philippe 97442, La Réunion","lat":-21.2913474,"lng":55.7981091,"gmaps":"https://www.google.com/maps/search/?api=1&query=La+Case+Volcan,+123+A+Route+Nationale+2+le+Tremblet,+Saint-Philippe+97442,+La+Réunion","cat":"food"},{"name":"Ti chouchou","type":"Restaurant","address":"Ti chouchou, 42 Rue du General de Gaulle, Salazie 97433, La Réunion","lat":-21.065472,"lng":55.5194115,"gmaps":"https://www.google.com/maps/search/?api=1&query=Ti+chouchou,+42+Rue+du+General+de+Gaulle,+Salazie+97433,+La+Réunion","cat":"food"},{"name":"Bourbon Parapente dé Zîles","type":"Parapente","address":"Bourbon Parapente dé Zîles, 34 Rue du Général Lambert, Saint-Leu 97436, La Réunion","lat":-21.1520566,"lng":55.2795563,"gmaps":"https://www.google.com/maps/search/?api=1&query=Bourbon+Parapente+dé+Zîles,+34+Rue+du+Général+Lambert,+Saint-Leu+97436,+La+Réunion","cat":"activity"},{"name":"Marché Forain de Saint-Paul","type":"Marché","address":"Marché Forain de Saint-Paul, 10 Quai Gilbert, Saint-Paul 97460, La Réunion","lat":-21.0062714,"lng":55.2719269,"gmaps":"https://www.google.com/maps/search/?api=1&query=Marché+Forain+de+Saint-Paul,+10+Quai+Gilbert,+Saint-Paul+97460,+La+Réunion","cat":"market"},{"name":"Plage Grand Anse","type":"Plage","address":"Plage Grand Anse","lat":-21.3687188,"lng":55.5469899,"gmaps":"https://www.google.com/maps/search/?api=1&query=Plage+Grand+Anse","cat":"beach"},{"name":"Depart sentier Cap Jaune","type":"Randonnée","address":"Début du sentier de Cap Jaune, 50 Rue De La Marine, Saint-Joseph 97480, La Réunion","lat":-21.37842,"lng":55.67593489999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Début+du+sentier+de+Cap+Jaune,+50+Rue+De+La+Marine,+Saint-Joseph+97480,+La+Réunion","cat":"hike"},{"name":"Marché forrain st leu","type":"Marché","address":"Marché Forain de Saint-Leu, Rue De La Compagnie Des Indes, Saint-Leu 97436, La Réunion","lat":-21.1680053,"lng":55.2864268,"gmaps":"https://www.google.com/maps/search/?api=1&query=Marché+Forain+de+Saint-Leu,+Rue+De+La+Compagnie+Des+Indes,+Saint-Leu+97436,+La+Réunion","cat":"market"},{"name":"Chez les Delices de Marie-C","type":"Restaurant","address":"Chez les délices de Marie-C, 209 Route Nationale 2, Sainte-Rose 97439, La Réunion","lat":-21.1288596,"lng":55.7966865,"gmaps":"https://www.google.com/maps/search/?api=1&query=Chez+les+délices+de+Marie-C,+209+Route+Nationale+2,+Sainte-Rose+97439,+La+Réunion","cat":"food"},{"name":"Copacabana","type":"Restaurant","address":"Copacabana, 20 Rue des Mouettes, Saint-Paul 97434, La Réunion","lat":-21.0929701,"lng":55.2333887,"gmaps":"https://www.google.com/maps/search/?api=1&query=Copacabana,+20+Rue+des+Mouettes,+Saint-Paul+97434,+La+Réunion","cat":"food"},{"name":"Coulee de lave","type":"Site naturel","address":"PRV3+H3 Coulee de lave mars 2026, Saint-Philippe, La Réunion","lat":-21.2561191,"lng":55.80270849999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=PRV3+H3+Coulee+de+lave+mars+2026,+Saint-Philippe,+La+Réunion","cat":"activity"},{"name":"Bassin Bœuf","type":"Site naturel","address":"Bassin Bœuf","lat":-20.949167,"lng":55.583611,"gmaps":"https://www.google.com/maps/search/?api=1&query=Bassin+Bœuf","cat":"waterfall"},{"name":"Pont suspendu","type":"Site naturel","address":"Pont suspendu de la Rivière de l'Est, Sainte-Rose 97439, La Réunion","lat":-21.1239264,"lng":55.7479361,"gmaps":"https://www.google.com/maps/search/?api=1&query=Pont+suspendu+de+la+Rivière+de+l'Est,+Sainte-Rose+97439,+La+Réunion","cat":"activity"},{"name":"Plage de Saint-Pierre","type":"Plage","address":"Plage de Saint-Pierre, 46 Bd Hubert Delisle, Saint-Pierre 97410, La Réunion","lat":-21.3445104,"lng":55.4725635,"gmaps":"https://www.google.com/maps/search/?api=1&query=Plage+de+Saint-Pierre,+46+Bd+Hubert+Delisle,+Saint-Pierre+97410,+La+Réunion","cat":"beach"},{"name":"Cascade Bras Rouge","type":"Cascade","address":"VFH3+23 Cascade de Bras Rouge, Cilaos, La Réunion","lat":-21.1291817,"lng":55.455528,"gmaps":"https://www.google.com/maps/search/?api=1&query=VFH3+23+Cascade+de+Bras+Rouge,+Cilaos,+La+Réunion","cat":"waterfall"},{"name":"La Bonne Marmite","type":"Restaurant","address":"La Bonne Marmite, 68 Rte du Trou d'Eau, Saint-Paul 97434, La Réunion","lat":-21.0993487,"lng":55.2422069,"gmaps":"https://www.google.com/maps/search/?api=1&query=La+Bonne+Marmite,+68+Rte+du+Trou+d'Eau,+Saint-Paul+97434,+La+Réunion","cat":"food"},{"name":"Depart Roche Vert Bouteille","type":"Randonnée","address":"Départ Boucle à Dos d’Ane par le sentier du Piton Batard et la Roche Verre Bouteille, 2 All. Vivien, La Réunion","lat":-20.9890449,"lng":55.3868011,"gmaps":"https://www.google.com/maps/search/?api=1&query=Départ+Boucle+à+Dos+d’Ane+par+le+sentier+du+Piton+Batard+et+la+Roche+Verre+Bouteille,+2+All.+Vivien,+La+Réunion","cat":"hike"},{"name":"Pas de Bellecombe","type":"Randonnée","address":"Parking du Pas de Bellecombe, Rte Du Volcan, La Réunion","lat":-21.2250828,"lng":55.6844441,"gmaps":"https://www.google.com/maps/search/?api=1&query=Parking+du+Pas+de+Bellecombe,+Rte+Du+Volcan,+La+Réunion","cat":"hike"},{"name":"Le Bistrot des Songes","type":"Restaurant","address":"Le Bistrot des Songes, La Réunion","lat":-21.0769064,"lng":55.422496,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Bistrot+des+Songes,+La+Réunion","cat":"food"},{"name":"Point de vue nez de boeuf","type":"Point de vue","address":"Point de vue panoramique du Nez de Boeuf, Rte du Volcan, Le Tampon 97480, La Réunion","lat":-21.2084775,"lng":55.6165354,"gmaps":"https://www.google.com/maps/search/?api=1&query=Point+de+vue+panoramique+du+Nez+de+Boeuf,+Rte+du+Volcan,+Le+Tampon+97480,+La+Réunion","cat":"viewpoint"},{"name":"La Vanilleraie","type":"Domaine / Musée","address":"La Vanilleraie, Domaine du Grand Hazier, Domaine du Grand Hazier, 2 ter All. Chassagne, Sainte-Suzanne 97441, La Réunion","lat":-20.904757,"lng":55.588143,"gmaps":"https://www.google.com/maps/search/?api=1&query=La+Vanilleraie,+Domaine+du+Grand+Hazier,+Domaine+du+Grand+Hazier,+2+ter+All.+Chassagne,+Sainte-Suzanne+97441,+La+Réunion","cat":"activity"},{"name":"Volcanorun","type":"Activité","address":"1 - Apt. 6 Résidence, Tunnels de Lave Réunion Volcanorun, Sea Blue, 57 Ter Chem. Summer N° 1, Saint-Paul 97434, La Réunion","lat":-21.0498007,"lng":55.2262012,"gmaps":"https://www.google.com/maps/search/?api=1&query=1+-+Apt.+6+Résidence,+Tunnels+de+Lave+Réunion+Volcanorun,+Sea+Blue,+57+Ter+Chem.+Summer+N°+1,+Saint-Paul+97434,+La+Réunion","cat":"activity"},{"name":"Sentier Grand Bassin","type":"Randonnée","address":"Sentier Grand Bassin, Le Tampon 97430, La Réunion","lat":-21.1905024,"lng":55.536572,"gmaps":"https://www.google.com/maps/search/?api=1&query=Sentier+Grand+Bassin,+Le+Tampon+97430,+La+Réunion","cat":"hike"},{"name":"Luge maido","type":"Luge","address":"PARC DE LA LUGE, 795 Rte du Maido, Saint-Paul 97423, La Réunion","lat":-21.0544392,"lng":55.3575397,"gmaps":"https://www.google.com/maps/search/?api=1&query=PARC+DE+LA+LUGE,+795+Rte+du+Maido,+Saint-Paul+97423,+La+Réunion","cat":"activity"},{"name":"SAUVAGE","type":"Restaurant","address":"SAUVAGE, Cap chameaux, 97434, La Réunion","lat":-21.0565584,"lng":55.2228465,"gmaps":"https://www.google.com/maps/search/?api=1&query=SAUVAGE,+Cap+chameaux,+97434,+La+Réunion","cat":"food"},{"name":"Domaine Cafe Grille","type":"Domaine","address":"Domaine du Café Grillé, 10 All. des Cèdres, Saint-Pierre 97410, La Réunion","lat":-21.306886,"lng":55.423972,"gmaps":"https://www.google.com/maps/search/?api=1&query=Domaine+du+Café+Grillé,+10+All.+des+Cèdres,+Saint-Pierre+97410,+La+Réunion","cat":"activity"},{"name":"Distillerie de Savanna","type":"Distillerie","address":"Distillerie de Savanna, Saint-André 97440, La Réunion","lat":-20.9160744,"lng":55.6379088,"gmaps":"https://www.google.com/maps/search/?api=1&query=Distillerie+de+Savanna,+Saint-André+97440,+La+Réunion","cat":"activity"},{"name":"rooftop","type":"Bar / Rooftop","address":"Sunset Lounge rooftop, Au dernier étage du Radisson, 2 Rue Doret, Saint-Denis 97400, La Réunion","lat":-20.8737647,"lng":55.44751789999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Sunset+Lounge+rooftop,+Au+dernier+étage+du+Radisson,+2+Rue+Doret,+Saint-Denis+97400,+La+Réunion","cat":"food"},{"name":"Helilagon","type":"Hélicoptère","address":"Helilagon, CS 81018 Cedex, Eperon Altiport, 190 Chem. Summer N° 2, Saint-Paul 97864, La Réunion","lat":-21.0350364,"lng":55.2607344,"gmaps":"https://www.google.com/maps/search/?api=1&query=Helilagon,+CS+81018+Cedex,+Eperon+Altiport,+190+Chem.+Summer+N°+2,+Saint-Paul+97864,+La+Réunion","cat":"activity"},{"name":"Cascade Niagara","type":"Cascade","address":"Cascade Niagara, Sainte-Suzanne 97441, La Réunion","lat":-20.9206348,"lng":55.6040411,"gmaps":"https://www.google.com/maps/search/?api=1&query=Cascade+Niagara,+Sainte-Suzanne+97441,+La+Réunion","cat":"waterfall"},{"name":"Cascade blanche","type":"Cascade","address":"Cascade blanche, Bras-Panon 97412, La Réunion","lat":-21.0072999,"lng":55.5844183,"gmaps":"https://www.google.com/maps/search/?api=1&query=Cascade+blanche,+Bras-Panon+97412,+La+Réunion","cat":"waterfall"},{"name":"Formica Leo","type":"Site naturel","address":"Formica Leo","lat":-21.223819,"lng":55.6922588,"gmaps":"https://www.google.com/maps/search/?api=1&query=Formica+Leo","cat":"activity"},{"name":"Le Bambou Bar","type":"Bar","address":"Le Bambou Bar, 35 Rue du Boucan Canot, Saint-Paul 97434, La Réunion","lat":-21.0284325,"lng":55.22632669999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Bambou+Bar,+35+Rue+du+Boucan+Canot,+Saint-Paul+97434,+La+Réunion","cat":"food"},{"name":"Mafate Café","type":"Bar / Restaurant","address":"Mafate Café, 3 Rue du Moulin à Vent, Saint-Denis 97400, La Réunion","lat":-20.8741037,"lng":55.4506001,"gmaps":"https://www.google.com/maps/search/?api=1&query=Mafate+Café,+3+Rue+du+Moulin+à+Vent,+Saint-Denis+97400,+La+Réunion","cat":"food"},{"name":"La Nouvelle","type":"Site naturel","address":"Office de Tourisme de l'Ouest - Bureau Information de la Nouvelle à Mafate, la nouvelle mafate, La Possession 97419, La Réunion","lat":-21.0766457,"lng":55.4244976,"gmaps":"https://www.google.com/maps/search/?api=1&query=Office+de+Tourisme+de+l'Ouest+-+Bureau+Information+de+la+Nouvelle+à+Mafate,+la+nouvelle+mafate,+La+Possession+97419,+La+Réunion","cat":"activity"},{"name":"Chez Loulou","type":"Restaurant","address":"Chez Loulou, 15-23 Rue De La Poste, 97460, La Réunion","lat":-21.0516381,"lng":55.2253073,"gmaps":"https://www.google.com/maps/search/?api=1&query=Chez+Loulou,+15-23+Rue+De+La+Poste,+97460,+La+Réunion","cat":"food"},{"name":"Aquarium de La Réunion","type":"Aquarium","address":"Aquarium de La Réunion, Port de Plaisance, 97434, La Réunion","lat":-21.0546295,"lng":55.2249736,"gmaps":"https://www.google.com/maps/search/?api=1&query=Aquarium+de+La+Réunion,+Port+de+Plaisance,+97434,+La+Réunion","cat":"activity"},{"name":"Depart Piton bois de nefles via pic adam","type":"Randonnée","address":"Parking Pic Adam, Chemin du Pic Adam, Saint-Denis 97490, La Réunion","lat":-20.9356649,"lng":55.4674511,"gmaps":"https://www.google.com/maps/search/?api=1&query=Parking+Pic+Adam,+Chemin+du+Pic+Adam,+Saint-Denis+97490,+La+Réunion","cat":"hike"},{"name":"Plage du Trou d'Eau","type":"Plage","address":"Plage du Trou d'Eau, Rte du Trou d'Eau, 97434, La Réunion","lat":-21.1012765,"lng":55.2436151,"gmaps":"https://www.google.com/maps/search/?api=1&query=Plage+du+Trou+d'Eau,+Rte+du+Trou+d'Eau,+97434,+La+Réunion","cat":"beach"},{"name":"Marché forrain st pierre","type":"Marché","address":"Marché Forain de Saint-Pierre, 33 Bd Hubert Delisle, 97410, La Réunion","lat":-21.3399311,"lng":55.4597428,"gmaps":"https://www.google.com/maps/search/?api=1&query=Marché+Forain+de+Saint-Pierre,+33+Bd+Hubert+Delisle,+97410,+La+Réunion","cat":"market"},{"name":"conservatoire botanique","type":"Jardin botanique","address":"Conservatoire botanique national de Mascarin, 2 Rue du Pere Georges, Saint-Leu 97436, La Réunion","lat":-21.1380713,"lng":55.2943138,"gmaps":"https://www.google.com/maps/search/?api=1&query=Conservatoire+botanique+national+de+Mascarin,+2+Rue+du+Pere+Georges,+Saint-Leu+97436,+La+Réunion","cat":"activity"},{"name":"Le Vieux Creole","type":"Restaurant","address":"Le Vieux Kréole, 5 Rue du Dancing, Saint-Denis 97490, La Réunion","lat":-20.8858849,"lng":55.4697363,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Vieux+Kréole,+5+Rue+du+Dancing,+Saint-Denis+97490,+La+Réunion","cat":"food"},{"name":"Souffleur","type":"Site naturel","address":"Q7FR+CX Le Souffleur, Saint-Leu, La Réunion","lat":-21.2247829,"lng":55.2924296,"gmaps":"https://www.google.com/maps/search/?api=1&query=Q7FR+CX+Le+Souffleur,+Saint-Leu,+La+Réunion","cat":"activity"},{"name":"L'uni Vert","type":"Restaurant","address":"L'uni Vert, 70 Rte du Trou d'Eau, 97434, La Réunion","lat":-21.0997533,"lng":55.24217969999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=L'uni+Vert,+70+Rte+du+Trou+d'Eau,+97434,+La+Réunion","cat":"food"},{"name":"station point de vue saint leu","type":"Station-service / Point de vue","address":"OLA Energy Tamarins, Aire Saline Aval - PK10 + 500, Rte des Tamarins, 97422, La Réunion","lat":-21.088377,"lng":55.255815,"gmaps":"https://www.google.com/maps/search/?api=1&query=OLA+Energy+Tamarins,+Aire+Saline+Aval+-+PK10+++500,+Rte+des+Tamarins,+97422,+La+Réunion","cat":"viewpoint"},{"name":"Maison Folio","type":"Musée / Maison","address":"26, Maison Folio, 16 Rue Amiral Lacaze, 97433, La Réunion","lat":-21.0652889,"lng":55.518279,"gmaps":"https://www.google.com/maps/search/?api=1&query=26,+Maison+Folio,+16+Rue+Amiral+Lacaze,+97433,+La+Réunion","cat":"activity"},{"name":"Belvédère Bois court","type":"Point de vue","address":"Belvédère de Bois Court, D70, La Réunion","lat":-21.1904041,"lng":55.53685669999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Belvédère+de+Bois+Court,+D70,+La+Réunion","cat":"viewpoint"},{"name":"La Roche Merveilleuse","type":"Site naturel","address":"Roche Merveilleuse, 21°07'32.9\"S 55°28'45., Rue Ferblantier, La Réunion","lat":-21.125799,"lng":55.479402,"gmaps":"https://www.google.com/maps/search/?api=1&query=Roche+Merveilleuse,+21°07'32.9\"S+55°28'45.,+Rue+Ferblantier,+La+Réunion","cat":"activity"},{"name":"Notre Dame des Laves","type":"Site religieux","address":"Notre Dame des Laves, N2, 97439, La Réunion","lat":-21.1605962,"lng":55.82411339999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Notre+Dame+des+Laves,+N2,+97439,+La+Réunion","cat":"activity"},{"name":"Restaurant Les Badamiers","type":"Restaurant","address":"Restaurant Les Badamiers, 22 Chem. Neuf, Petite-Île 97429, La Réunion","lat":-21.3690296,"lng":55.553639,"gmaps":"https://www.google.com/maps/search/?api=1&query=Restaurant+Les+Badamiers,+22+Chem.+Neuf,+Petite-Île+97429,+La+Réunion","cat":"food"},{"name":"Le Nirvana","type":"Restaurant","address":"Le Nirvana, 1 Imp. de la Digue, Saint-Joseph 97480, La Réunion","lat":-21.3847789,"lng":55.6449738,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+Nirvana,+1+Imp.+de+la+Digue,+Saint-Joseph+97480,+La+Réunion","cat":"food"},{"name":"Plage de l'Hermitage","type":"Plage","address":"Plage de l'Hermitage, Bd Leconte de Lisle, La Réunion","lat":-21.0794928,"lng":55.222319,"gmaps":"https://www.google.com/maps/search/?api=1&query=Plage+de+l'Hermitage,+Bd+Leconte+de+Lisle,+La+Réunion","cat":"beach"},{"name":"Corail Plongée","type":"Plongée","address":"Corail Plongée : École de Plongée Saint Gilles La Reunion, Port de plaisance, 97434, La Réunion","lat":-21.0538625,"lng":55.22647019999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Corail+Plongée+:+École+de+Plongée+Saint+Gilles+La+Reunion,+Port+de+plaisance,+97434,+La+Réunion","cat":"beach"},{"name":"Le D.C.P","type":"Bar / Restaurant","address":"Le D.C.P, saint gilles les bains 97434, La Réunion","lat":-21.0528368,"lng":55.2263669,"gmaps":"https://www.google.com/maps/search/?api=1&query=Le+D.C.P,+saint+gilles+les+bains+97434,+La+Réunion","cat":"food"},{"name":"Départ Roche ecrite","type":"Randonnée","address":"Camp Mamode, Saint-Denis 97400, La Réunion","lat":-20.9522593,"lng":55.43692189999999,"gmaps":"https://www.google.com/maps/search/?api=1&query=Camp+Mamode,+Saint-Denis+97400,+La+Réunion","cat":"hike"},{"name":"Saint-Gilles-les-Bains","type":"Point de départ","address":"Saint-Gilles-les-Bains, La Réunion","lat":-21.0553,"lng":55.2245,"gmaps":"https://www.google.com/maps/search/?api=1&query=Saint-Gilles-les-Bains,+La+Réunion","cat":"depart"}];
+const CATS = {"colors": {"all": "#2d4a3e", "viewpoint": "#7a4d2a", "hike": "#3d5a3a", "waterfall": "#3a6b8a", "beach": "#2a8a99", "food": "#a8472e", "market": "#8a5a2a", "activity": "#6a4a8a", "depart": "#1a2a25"}, "icons": {"all": "✦", "viewpoint": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 10h4\"/><circle cx=\"6\" cy=\"15\" r=\"4\"/><circle cx=\"18\" cy=\"15\" r=\"4\"/><path d=\"M5.5 12.5 8 5h2l-.5 6\"/><path d=\"M18.5 12.5 16 5h-2l.5 6\"/></svg>", "hike": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"13\" cy=\"4\" r=\"2\"/><path d=\"M12 22V14l-3-4 2-5 3 3h3\"/><path d=\"M9 14l-3 8\"/><path d=\"M14 14l3 4\"/><path d=\"M19 3v18\"/></svg>", "waterfall": "≋", "beach": "≈", "food": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 2v7c0 1.1.9 2 2 2h1V2\"/><path d=\"M5 11v11\"/><path d=\"M19 2v20\"/><path d=\"M17 2c-1.5 0-3 2-3 5s1 4 3 4h2V2z\"/></svg>", "market": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 7h20l-2 4H4z\"/><path d=\"M4 11v10h16V11\"/><path d=\"M9 21v-5h6v5\"/><path d=\"M2 7l2-4h16l2 4\"/></svg>", "activity": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 3v18\"/><path d=\"M5 3c8 0 14 6 14 14\"/><path d=\"M5 21c8 0 14-6 14-14\"/><path d=\"M9 12h12\"/><path d=\"M21 12l-3-3\"/><path d=\"M21 12l-3 3\"/></svg>", "depart": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><polyline points=\"9 22 9 12 15 12 15 22\"/></svg>"}, "labels": {"all": "Tout", "viewpoint": "Points de vue", "hike": "Randonnées", "waterfall": "Cascades", "beach": "Plages", "food": "Restaurants", "market": "Marchés", "activity": "Activités", "depart": "Point de départ"}};
+const CIRCUIT_COLORS = ["#a8472e", "#2a8a99", "#3d5a3a", "#c97b3e", "#5a3a6a", "#7a4d2a", "#2d4a3e", "#3a6b8a"];
+const STORAGE_KEY = 'reunion_circuits_v1';
+const TIPS_KEY = 'reunion_tips_v1';
+const HIKES_KEY = 'reunion_hikes_v1';
+const XLSX_TIPS = {"0":"Cirque sans voiture, uniquement accessible en randonnée pour 3h30 de durée. aller descente mais retour montée. Village incontournable et depaysant !","1":"Bon spot pour plonger Plame Masque et Tubas","2":"Balade digestive","3":"Incoutournable...bienvenu sur Mars...","4":"escale pour prendre des barquettes à emporter pour pique nique. N'oubliez pas de jeter un oeil à Notre Dame des laves...","5":"Balade le long d'une falaise donnant un magnifique point de vue sur le Cirque de Mafate (si pas de nuages...)","6":"Crique magnifique avec cascades et possibilité de se mouiller un peu dans les cours d'eau affluents. Restaurant sur place ou pique nique ! incontournable sur un tour de l'île","7":"Sur le chemin vers le cirque de Salazie, arretez vous y, ca vaut le coup d'oeil ;-)","8":"Point de vue sur le Cirque de Mafate","9":"Si vous aimez les vagues qui cassent sur des rochers ! c'est pas mal","10":"Petite randonnée avec point de vue sur Saint Denis","11":"Village sans voiture avec une magnifique cascade; Attention, randonnée courte mais intense car uniquement descente ou montée. mais quel régal !!","12":"Marre du riz? crêperie à Saint Gilles connue","13":"petite balade au bord de l'eau, pas très longue","14":"si vous voulez acheter des bouteilles et autres confiseries à base de rhum!","15":"un brunch ? allez y !","16":"Vous avez envie de prendre un verre sur St Denis avec un peu d'ambiance...foncez surtout le vendredi et samedi !!","17":"Randonnée typique, magnifique point de vue sur Mafate et Salazie, ca demande un effort quand même. Mais ca vaut le coup !","18":"Petit lac à Cilaos pour se balader","19":"Si vous avez envie d'un italien dans un batiment historique","20":"Parking à partir duquel vous démarrez la randonnée vers le Cirque de Mafate","21":"une Ferme au tortue pour un peu de douceur","22":"Parfait si vous avez une 1h de libre pour avoir une vue sur St Denis","23":"Escale inmanquable quand vous allez au Volcan. Faites le au retour, car le Volcan plus tot vous y serez, plus vous aurez de chance de voir quelque chose","24":"Super randonnée avec point de vue, courte et pas difficile","25":"Dimanches 06h à 12h\nMercredi 6h à 12h","26":"Cascade pas trop connue mais arrivée splendide ! appelez nous pour les tips sur la route à suivre ;-)","27":"Bassin naturel aux abords de l'océan !","28":"Front de mer connu de Saint Denis, s'il y a un évènnement, ça sera au Bar à Choix","29":"Lagon cosy et plongée masque tubas  intéressante","30":"Départ du sentier pour descendre dans l'enclos du volcan. Recommandation d'aller jusqu'au cratère Formica Léo et de revenir (le Piton c'est loin et monotone)","31":"Petit restaurant très simple au bord de l'eau avec de bons carris","32":"Vous voulez plonger avec Dauphin et/ou Baleines? ne cherchez pas c'est DUOCEAN. Réservez en avance","33":"Petite aire de pique nique tèrs sympa","34":"Temple Malbar typique, visible depuis la route. Vous pouvez demander à visiter sur place s'il ya quelqu'un...Des fois que...","35":"Restaurant sympa divers sur le bord de l'eau !","36":"Incontournable ! une des plus belles cascades de l'ile. Attention, accès en voiture très pentu et étroit, besoin d'un bon moteur et d'un bon conducteur","37":"Restaurant qui permet de deguster les plats avant des les commander! original et très sympa si vous êtes dans le coin","38":"Vous etes à Salazie? Vous avez faim?Foncez !! allez en terrasse en haut, ne restez pas en bas à l'intérieur. Vous pourrez tester le poulet vanille et plein d'autres plats créoles","39":"Départ dans la frais des hauts et attérissage dans le chaud du sable. Très sympa pour profiter du paysage cotier","40":"Vendredi 06h à 15h\nSamedi 06h à 12h","41":"Plage mi herbe, mi sable avec arbres pour ombre. Très belle, évitez le wkd; les créoles adorent y pique niquer","42":"petite balade digestive simple courte au bord de l'eau","43":"samedi 05h à 12h45","44":"Si vous voulez un casse croute pour la route","45":"Restaurant sur la plage","46":"Les coulées...incontournables, il y en a plusieurs vous les verrez forcément !","47":"Magnifique cascade !! Le sentier est un peu casse cou des fois mais allez-y ca vaut le coup d'oeil !","48":"escale très chouette sur un tour de l'ile !","49":"Plage dans la ville, pas mal de bar et restau, bien pour finir une journée aussi","50":"Rando sympa à Cilaos --> contactez nous","51":"Un bon restaurant créole en buffet dans les marmites !","52":"Départ du sentier pour 1h avec super point de vue","53":"Incontournable ! Point de vue du Piton de la Fournaise! sauf si nuages... allez y le plus tot (avant 9h c'est bien)","54":"Petit bistrot dans le village de la Nouvelle dans le cirque de Mafate","55":"Escale sur la route et magnifique point de vue, arretez vous y","56":"Si vous aimez la vanille et découvrir plus","57":"Activité inédite et rare dans le monde entier. Ne pas être claustro ca aide...mais expérience génial avec Volcanorun, un passionné ! Attention le point de rendez vous sera au niveau des coulées de lave à l'Est de l'ile","58":"Sentier pour les sportifs, on s'y régale de l'avoir fait! belle cascade à la clé et village typique","59":"acitvité fun avec les enfants ! mais aussi pour les adultes ! si vous allez au maido arretez vous y sur le retour","60":"Bar restau tapas sur la plage !","61":"Si vous voulez apprendre plus sur le café à la Réunion","62":"Même si vous n'êtes pas passionné de rhum, cette usine vaut le détour, de la canne au rhum, faites le céneau du soir c'est pas mal","63":"envie d'un petit roof top classe? voila...","64":"Une des entreprises helico, prenez le créneau le plus tot de la journée ! vraiment ! vous pourrez avoir la meilleure meteo","65":"accessible en voiture, belle cascade, passage dans les champs de cannes en arrivant","66":"petit sentier qui amène à une grande cascade, on peut s'y baigner, pas mal si vous êtes dans le coin.","67":"Cratère à voir si vous partez dans l'enclos du volcan","68":"Restaurant très sympa, créole et autre plats, au bord d'une plage connue: Boucan Cannot","69":"pour un brunch à la créole !!","70":"Village du Cirque de Mafate à faire si vous y allez !!","71":"Boulangerie très connue mais qui a brulé...reconstruit temporairement à coté, pas mal de spécialité locales","72":"Si vous n'aimez pas plonger, la mer peut venir à vous. Sympa avec les enfants","73":"Demande un peu d'effort mais faisable pour les débutants","74":"Bon spot pour plonger Plame Masque et Tubas","75":"samedi 05h à 12h","76":"Si vous aimez les plantes, vous y trouverez bonheur","77":"Bon restaurant créole sur St Denis","78":"ah...cherchez le...si vous voyez un jet d'eau souffler vers le haut vous y etes!","79":"brunch ? :-)","80":"petit point de vue sympa, et bon point de rencontre pour aller à plein d'endroits sur l'ile","81":"si vous êtes à la salazie, ça vaut le coups, petite maison créole","82":"beau point de vue, ca vaut le petit crochet de voiture. On peut y voir Grand bassin en contre bas","83":"Point de vue sur Cilaos, accessible en voiture et 5mn à pied","84":"Eglise magique dont la lave à contourner. Ca vaut le coup d'oeil lorsque vous ferez votre tour de l'île","85":"Très sympa si vous cherchez un retau dans le coin, très bon et chouette point vue naturel","86":"AU TOP. Ce restaurant fait de très bon caris et le cadre est magique","87":"Bon spot pour plonger Masque et Tubas","88":"Vous voulez plonger avec bouteille ? ils sont pas mal ;-)","89":"Restaurant de poisson...un des rares :-). Il est bien","90":"Départ du sentier --> conactez nous"};
+
+const state = {
+  tab: 'addresses',
+  cat: 'all',
+  q: '',
+  active: null,
+  circuits: [],
+  activeCircuit: null,
+  hikes: [],
+  activeHike: null,
+  editing: null,   // { kind:'circuit'|'hike', id, name, note, color, points:[{idx,note,role?}] }
+  tips: {},
+  editingTip: null,
+  tipDrawer: null,
+};
+
+const markers = [];
+const circuitLayers = {};
+const hikeLayers = {};
+let map;
+
+function loadCircuits() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state.circuits = JSON.parse(raw);
+  } catch (e) { console.warn('load failed', e); }
+}
+function saveCircuits() { return; }
+function _saveCircuits_disabled() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.circuits)); }
+  catch (e) { console.warn('save failed', e); }
+}
+function loadTips() {
+  try {
+    const raw = localStorage.getItem(TIPS_KEY);
+    const stored = raw ? (JSON.parse(raw) || {}) : {};
+    // Merge xlsx tips as defaults; stored tips (user edits) take priority
+    state.tips = { ...XLSX_TIPS, ...stored };
+  } catch (e) {
+    state.tips = { ...XLSX_TIPS };
+    console.warn('load tips failed, using defaults', e);
+  }
+}
+function saveTips() { return; }
+function _saveTips_disabled() {
+  try { localStorage.setItem(TIPS_KEY, JSON.stringify(state.tips)); }
+  catch (e) { console.warn('save tips failed', e); }
+}
+function loadHikes() {
+  try {
+    const raw = localStorage.getItem(HIKES_KEY);
+    if (raw) state.hikes = JSON.parse(raw) || [];
+  } catch (e) { console.warn('load hikes failed', e); }
+}
+function saveHikes() { return; }
+function _saveHikes_disabled() {
+  try { localStorage.setItem(HIKES_KEY, JSON.stringify(state.hikes)); }
+  catch (e) { console.warn('save hikes failed', e); }
+}
+function nextCircuitColor() {
+  const used = state.circuits.map(c => c.color);
+  for (const c of CIRCUIT_COLORS) if (!used.includes(c)) return c;
+  return CIRCUIT_COLORS[state.circuits.length % CIRCUIT_COLORS.length];
+}
+function newId() { return 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+
+function initMap() {
+  map = L.map('map', { zoomControl: true, attributionControl: true })
+    .setView([-21.115, 55.535], 10);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · © CARTO',
+    subdomains: 'abcd', maxZoom: 19,
+  }).addTo(map);
+
+  PLACES.forEach((p, idx) => {
+    const color = CATS.colors[p.cat] || '#444';
+    const icon  = CATS.icons[p.cat]  || '•';
+    const html = `<div class="pin" style="--pin-color:${color}"><span>${icon}</span></div>`;
+    const m = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        className: 'pin-wrap', html,
+        iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28],
+      })
+    });
+    m._idx = idx;
+    m.bindPopup(() => buildPopup(idx, null), { closeButton: false, offset: [0, 0] });
+    m.on('click', () => { setActive(idx, false); if (window.innerWidth > 900) scrollCardIntoView(idx); });
+    markers.push(m);
+  });
+
+  // Delegate popup tip-action clicks — popup is read-only, clicking edit
+  // scrolls to and opens the sidebar tip drawer.
+  map.on('popupopen', e => {
+    const root = e.popup.getElement();
+    if (!root) return;
+    root.querySelectorAll('[data-tip-popup-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.getAttribute('data-tip-popup-act');
+        const idx = +btn.getAttribute('data-tip-idx');
+        if (act === 'edit') {
+          // Close popup, open sidebar drawer for this place
+          map.closePopup();
+          openSidebarTip(idx);
+        }
+      });
+    });
+  });
+
+  map.on('popupclose', () => { /* nothing to reset */ });
+
+  applyFilters();
+}
+
+/* ============ SIDEBAR TIP DRAWER ============ */
+// The drawer renders inline inside the list, just below the active card.
+// State: state.tipDrawer = { idx, mode: 'read'|'edit' } | null
+
+function openSidebarTip(idx) {
+  // Ensure the addresses tab is visible and the card is active
+  if (state.tab !== 'addresses') switchTab('addresses');
+  state.active = idx;
+  state.tipDrawer = { idx, mode: 'edit' };
+  // Re-render list so the card is highlighted and drawer appears
+  applyFilters();
+  // Scroll card into view
+  setTimeout(() => {
+    const card = document.querySelector(`.card[data-idx="${idx}"]`);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
+}
+
+function closeSidebarTip() {
+  state.tipDrawer = null;
+  renderListOnly();
+}
+
+function saveSidebarTip(idx) {
+  const ta = document.getElementById('sidebar-tip-ta');
+  if (!ta) return;
+  const text = ta.value.trim();
+  if (text) state.tips[idx] = text;
+  else delete state.tips[idx];
+  saveTips();
+  state.tipDrawer = null;
+  renderListOnly();
+}
+
+function deleteSidebarTip(idx) {
+  if (!confirm('Supprimer ce tip ?')) return;
+  delete state.tips[idx];
+  saveTips();
+  state.tipDrawer = null;
+  renderListOnly();
+}
+
+// Build the tip drawer HTML
+function buildTipDrawer(idx) {
+  const tip = state.tips[idx];
+  const mode = state.tipDrawer && state.tipDrawer.idx === idx ? state.tipDrawer.mode : null;
+  if (!mode) return '';
+
+  if (mode === 'edit') {
+    return `<div class="tip-drawer">
+      <div class="tip-drawer-label">
+        <span>Tips de Cynthia et Vincent</span>
+        <button class="tip-drawer-close" data-tdact="close" data-tdidx="${idx}">×</button>
+      </div>
+      <textarea id="sidebar-tip-ta" placeholder="Notre conseil pour cette adresse…" maxlength="600">${escapeHtml(tip || '')}</textarea>
+      <div class="tip-drawer-actions">
+        <button class="tip-btn primary" data-tdact="save" data-tdidx="${idx}">Enregistrer</button>
+        <button class="tip-btn" data-tdact="close" data-tdidx="${idx}">Annuler</button>
+        ${tip ? `<button class="tip-btn danger" data-tdact="delete" data-tdidx="${idx}">Supprimer</button>` : ''}
+      </div>
+    </div>`;
+  }
+  // read mode
+  return `<div class="tip-drawer">
+    <div class="tip-drawer-label">
+      <span>Tips de Cynthia et Vincent</span>
+      <button class="tip-drawer-close" data-tdact="close" data-tdidx="${idx}">×</button>
+    </div>
+    <div class="tip-drawer-read">${escapeHtml(tip || '')}</div>
+    <div class="tip-drawer-actions">
+      <button class="tip-btn primary" data-tdact="edit-mode" data-tdidx="${idx}">Modifier</button>
+      <button class="tip-btn danger" data-tdact="delete" data-tdidx="${idx}">Supprimer</button>
+    </div>
+  </div>`;
+}
+
+function attachTipDrawerHandlers() {
+  document.querySelectorAll('[data-tdact]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const act = btn.getAttribute('data-tdact');
+      const idx = +btn.getAttribute('data-tdidx');
+      if (act === 'close') closeSidebarTip();
+      else if (act === 'edit-mode') {
+        state.tipDrawer = { idx, mode: 'edit' };
+        renderListOnly();
+        setTimeout(() => {
+          const ta = document.getElementById('sidebar-tip-ta');
+          if (ta) ta.focus();
+        }, 30);
+      }
+      else if (act === 'save') saveSidebarTip(idx);
+      else if (act === 'delete') deleteSidebarTip(idx);
+    });
+  });
+  // Auto-focus textarea in edit mode
+  const ta = document.getElementById('sidebar-tip-ta');
+  if (ta) setTimeout(() => ta.focus(), 30);
+}
+
+function refreshAllPopups() {
+  // Popup is now read-only — nothing to refresh in popup DOM.
+  // Just re-render the sidebar tip drawer if open.
+  if (state.tipDrawer !== null) renderListOnly();
+}
+
+function handleTipAction() { /* replaced by sidebar system */ }
+function updateTipsBadge() { }
+
+function buildPopup(idx, circuitContext) {
+  const p = PLACES[idx];
+  const color = CATS.colors[p.cat] || '#444';
+  const label = CATS.labels[p.cat] || '';
+  const addr = (p.address || '').replace(', La Réunion','');
+  let noteHtml = '';
+  if (circuitContext) {
+    const step = circuitContext.points.find(s => s.idx === idx);
+    if (step && step.note) {
+      noteHtml = `<div class="popup-note">${escapeHtml(step.note)}</div>`;
+    }
+  }
+  const tip = state.tips[idx];
+  let tipsHtml = '';
+  if (tip) {
+    tipsHtml = `
+      <div class="popup-tips">
+        <div class="popup-tips-label">Tips de Cynthia et Vincent</div>
+        <div class="popup-tips-text">${escapeHtml(tip)}</div>
+        <button class="popup-tips-edit-btn" data-tip-popup-act="edit" data-tip-idx="${idx}">✏ Modifier</button>
+      </div>`;
+  } else {
+    tipsHtml = `
+      <button class="popup-tips-add" data-tip-popup-act="edit" data-tip-idx="${idx}">
+        ✦ Ajouter un tip de Cynthia et Vincent
+      </button>`;
+  }
+  return `
+    <div class="popup" style="--cat-color:${color}">
+      <div class="popup-cat">${label}${circuitContext ? ' · ' + escapeHtml(circuitContext.name) : ''}</div>
+      <div class="popup-name">${escapeHtml(p.name)}</div>
+      <div class="popup-addr">${escapeHtml(addr)}</div>
+      ${noteHtml}
+      ${tipsHtml}
+      <a class="popup-btn" href="${p.gmaps}" target="_blank" rel="noopener">
+        Itinéraire <span style="font-size:14px;line-height:1">→</span>
+      </a>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+function matchesPlace(p) {
+  if (p.cat === 'depart') return false;  // never shown in address list
+  if (state.cat === '__circuits__') return false;
+  if (state.cat !== 'all' && p.cat !== state.cat) return false;
+  if (state.q) {
+    const q = state.q.toLowerCase();
+    const hay = (p.name + ' ' + p.address).toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function applyFilters() {
+  Object.values(circuitLayers).forEach(layer => map.removeLayer(layer));
+  Object.keys(circuitLayers).forEach(k => delete circuitLayers[k]);
+  Object.values(hikeLayers).forEach(layer => map.removeLayer(layer));
+  Object.keys(hikeLayers).forEach(k => delete hikeLayers[k]);
+
+  if (state.cat === '__circuits__') {
+    if (!state.activeCircuit && state.circuits.length) {
+      state.activeCircuit = state.circuits[0].id;
+    }
+    markers.forEach(m => { if (map.hasLayer(m)) map.removeLayer(m); });
+    if (state.activeCircuit) renderCircuitOnMap(state.activeCircuit, true);
+    renderList([]);
+    const c = state.circuits.find(c => c.id === state.activeCircuit);
+    document.getElementById('overlay').innerHTML = c
+      ? `<strong>${c.points.length}</strong> étape${c.points.length>1?'s':''} · ${escapeHtml(c.name)}`
+      : `<strong>0</strong> circuit`;
+    document.getElementById('count-label').textContent =
+      c ? `${c.points.length} étape${c.points.length>1?'s':''} dans « ${c.name} »` : 'Aucun circuit';
+    updateCounts();
+    return;
+  }
+
+  if (state.cat === '__hikes__') {
+    if (!state.activeHike && state.hikes.length) {
+      state.activeHike = state.hikes[0].id;
+    }
+    markers.forEach(m => { if (map.hasLayer(m)) map.removeLayer(m); });
+    if (state.activeHike) renderHikeOnMap(state.activeHike, true);
+    renderList([]);
+    const h = state.hikes.find(h => h.id === state.activeHike);
+    document.getElementById('overlay').innerHTML = h
+      ? `<strong>${h.points.length}</strong> point${h.points.length>1?'s':''} · ${escapeHtml(h.name)}`
+      : `<strong>0</strong> randonnée`;
+    document.getElementById('count-label').textContent =
+      h ? `${h.points.length} point${h.points.length>1?'s':''} dans « ${h.name} »` : 'Aucune randonnée';
+    updateCounts();
+    return;
+  }
+
+  const visible = [];
+  PLACES.forEach((p, idx) => {
+    const ok = matchesPlace(p);
+    if (ok) {
+      visible.push(idx);
+      if (!map.hasLayer(markers[idx])) markers[idx].addTo(map);
+    } else {
+      if (map.hasLayer(markers[idx])) map.removeLayer(markers[idx]);
+    }
+  });
+  renderList(visible);
+  updateCounts();
+  document.getElementById('overlay').innerHTML =
+    `<strong>${visible.length}</strong> lieu${visible.length>1?'x':''} affiché${visible.length>1?'s':''}`;
+  document.getElementById('count-label').textContent =
+    `${visible.length} adresse${visible.length>1?'s':''}`;
+}
+
+function updateCounts() {
+  const counts = { all: 0 };
+  PLACES.forEach(p => {
+    const ok = state.q ? (p.name + ' ' + p.address).toLowerCase().includes(state.q.toLowerCase()) : true;
+    if (!ok) return;
+    counts.all = (counts.all||0) + 1;
+    counts[p.cat] = (counts[p.cat]||0) + 1;
+  });
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const k = el.getAttribute('data-count');
+    const n = counts[k] || 0;
+    el.textContent = n ? `· ${n}` : '';
+  });
+  document.getElementById('chip-circuits-count').textContent =
+    state.circuits.length ? `· ${state.circuits.length}` : '';
+  // hike chip removed from DOM
+}
+
+function renderCircuitOnMap(id, fit) {
+  const c = state.circuits.find(c => c.id === id);
+  if (!c || !c.points.length) return;
+  const layer = L.layerGroup();
+  const latlngs = [];
+  c.points.forEach((step, i) => {
+    const p = PLACES[step.idx];
+    if (!p) return;
+    latlngs.push([p.lat, p.lng]);
+    const isDepart = p.cat === 'depart';
+    // Display number: depart=0, others count from 1
+    const nonDepartBefore = c.points.slice(0, i).filter(s => PLACES[s.idx]?.cat !== 'depart').length;
+    const displayNum = isDepart ? '0' : nonDepartBefore + 1;
+    const pinColor = isDepart ? '#1a2a25' : c.color;
+    const pinStyle = isDepart
+      ? `width:32px;height:32px;border-radius:4px 4px 50% 50%;background:${pinColor};border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3);display:grid;place-items:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:13px;cursor:pointer;`
+      : ``;
+    const html = isDepart
+      ? `<div style="${pinStyle}">${displayNum}</div>`
+      : `<div class="pin-num" style="--pin-color:${pinColor}">${displayNum}</div>`;
+    const m = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        className: 'pin-wrap', html,
+        iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -16],
+      })
+    });
+    m._idx = step.idx;
+    m._circuitId = c.id;
+    m.bindPopup(() => buildPopup(step.idx, c), { closeButton: false });
+    layer.addLayer(m);
+  });
+  if (latlngs.length > 1) {
+    const line = L.polyline(latlngs, {
+      color: c.color, weight: 3, opacity: 0.75,
+      dashArray: '6,8', lineCap: 'round',
+    });
+    layer.addLayer(line);
+  }
+  layer.addTo(map);
+  circuitLayers[id] = layer;
+  if (fit && latlngs.length) {
+    if (latlngs.length === 1) map.setView(latlngs[0], 13);
+    else map.fitBounds(latlngs, { padding: [60, 60], maxZoom: 13 });
+  }
+}
+
+function renderHikeOnMap(id, fit) {
+  const h = state.hikes.find(h => h.id === id);
+  if (!h || !h.points.length) return;
+  const layer = L.layerGroup();
+  const latlngs = [];
+  const HIKE_GREEN = '#3d5a3a';
+  const HIKE_RED   = '#a8472e';
+
+  h.points.forEach((step, i) => {
+    const p = PLACES[step.idx];
+    if (!p) return;
+    latlngs.push([p.lat, p.lng]);
+    const role = step.role || 'etape';
+    let html;
+    if (role === 'depart') {
+      html = `<div class="pin-hike-depart" style="--pin-color:${HIKE_GREEN}"></div>`;
+    } else if (role === 'arrivee') {
+      html = `<div class="pin-hike-arrivee" style="--pin-color:${HIKE_RED}">A</div>`;
+    } else {
+      // etape: numbered circle, count only etape points
+      const etapeBefore = h.points.slice(0, i).filter(s => (s.role||'etape') === 'etape').length + 1;
+      html = `<div class="pin-num" style="--pin-color:${h.color}">${etapeBefore}</div>`;
+    }
+    const sz = role === 'depart' ? [22, 20] : [32, 32];
+    const anchor = role === 'depart' ? [11, 20] : [16, 16];
+    const m = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        className: 'pin-wrap', html,
+        iconSize: sz, iconAnchor: anchor, popupAnchor: [0, -18],
+      })
+    });
+    m._idx = step.idx;
+    m._hikeId = h.id;
+    m.bindPopup(() => buildPopup(step.idx, null), { closeButton: false });
+    layer.addLayer(m);
+  });
+
+  if (latlngs.length > 1) {
+    const line = L.polyline(latlngs, {
+      color: h.color, weight: 3.5, opacity: 0.85,
+      lineCap: 'round', lineJoin: 'round',
+    });
+    layer.addLayer(line);
+  }
+  layer.addTo(map);
+  hikeLayers[id] = layer;
+  if (fit && latlngs.length) {
+    if (latlngs.length === 1) map.setView(latlngs[0], 13);
+    else map.fitBounds(latlngs, { padding: [60, 60], maxZoom: 13 });
+  }
+}
+
+function renderList(visibleIndices) {
+  const list = document.getElementById('list');
+  if (state.cat === '__circuits__') {
+    if (!state.circuits.length) {
+      list.innerHTML = `<div class="empty"><em>Pas encore de circuit</em>Allez dans l'onglet Circuits pour en créer un.</div>`;
+    } else {
+      const c = state.circuits.find(c => c.id === state.activeCircuit) || state.circuits[0];
+      const stepsHtml = c.points.map((s, i) => {
+        const p = PLACES[s.idx];
+        if (!p) return '';
+        const isDepart = p.cat === 'depart';
+        const nonDepartBefore = c.points.slice(0, i).filter(s2 => PLACES[s2.idx]?.cat !== 'depart').length;
+        const displayNum = isDepart ? '0' : nonDepartBefore + 1;
+        const pinColor = isDepart ? '#1a2a25' : c.color;
+        const pinExtra = isDepart ? 'border-radius:3px;' : '';
+        return `<div style="display:grid; grid-template-columns:auto 1fr; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); cursor:pointer" data-step-idx="${s.idx}">
+          <div class="pin-num" style="--pin-color:${pinColor}; width:24px; height:24px; font-size:11.5px; box-shadow:none; border-width:1px; ${pinExtra}">${displayNum}</div>
+          <div>
+            <div style="font-family:'Fraunces',serif; font-size:14px; color:var(--ink); text-align:left">${escapeHtml(p.name)}</div>
+            ${isDepart ? `<div style="font-size:11px; color:var(--ink-soft); text-align:left; letter-spacing:.04em; text-transform:uppercase">Point de départ</div>` : ''}
+            ${s.note ? `<div style="font-size:11.5px; color:var(--ink-soft); font-style:italic; margin-top:3px; text-align:left; line-height:1.4">${escapeHtml(s.note)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+      list.innerHTML = `
+        <div style="padding: 14px 14px 18px">
+          <div style="font-family:'Fraunces',serif; font-style:italic; font-size:22px; color:var(--lava); margin-bottom:6px">${escapeHtml(c.name)}</div>
+          ${c.note ? `<div style="margin-bottom:14px; font-style:italic; color:var(--ink-soft); font-size:13px; line-height:1.5">${escapeHtml(c.note)}</div>` : ''}
+          ${stepsHtml}
+          ${state.circuits.length > 1 ? `<div style="margin-top:16px; font-size:11.5px; color:var(--ink-soft); letter-spacing:0.06em; text-transform:uppercase">Autres circuits</div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px">
+            ${state.circuits.filter(cc => cc.id !== c.id).map(cc => `
+              <button data-switch="${cc.id}" style="background:transparent; border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-family:inherit; font-size:12px; color:var(--ink-soft); cursor:pointer; display:inline-flex; align-items:center; gap:6px">
+                <span style="width:8px; height:8px; border-radius:50%; background:${cc.color}"></span>${escapeHtml(cc.name)}
+              </button>`).join('')}
+          </div>` : ''}
+        </div>`;
+      list.querySelectorAll('[data-step-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = +el.getAttribute('data-step-idx');
+          const layer = circuitLayers[c.id];
+          if (!layer) return;
+          // Find the matching numbered marker and open its popup
+          let found = null;
+          layer.eachLayer(l => {
+            if (l.getLatLng && Math.abs(l.getLatLng().lat - PLACES[idx].lat) < 1e-6) {
+              found = l;
+            }
+          });
+          if (found) {
+            map.flyTo([PLACES[idx].lat, PLACES[idx].lng], Math.max(map.getZoom(), 13), { duration: 0.6 });
+            setTimeout(() => found.openPopup(), 500);
+          }
+        });
+      });
+      list.querySelectorAll('[data-switch]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activeCircuit = btn.getAttribute('data-switch');
+          applyFilters();
+        });
+      });
+    }
+    return;
+  }
+
+  if (state.cat === '__hikes__') {
+    if (!state.hikes.length) {
+      list.innerHTML = `<div class="empty"><em>Pas encore de randonnée</em>Allez dans l'onglet Randonnées pour en créer une.</div>`;
+    } else {
+      const h = state.hikes.find(h => h.id === state.activeHike) || state.hikes[0];
+      const HIKE_GREEN = '#3d5a3a'; const HIKE_RED = '#a8472e';
+      const roleLabel = { depart: 'Départ', arrivee: 'Arrivée', etape: 'Étape' };
+      const stepsHtml = h.points.map((s, i) => {
+        const p = PLACES[s.idx];
+        if (!p) return '';
+        const role = s.role || 'etape';
+        const pinColor = role === 'depart' ? HIKE_GREEN : role === 'arrivee' ? HIKE_RED : h.color;
+        const etapeBefore = h.points.slice(0,i).filter(s2=>(s2.role||'etape')==='etape').length + 1;
+        const label2 = role === 'etape' ? `Étape ${etapeBefore}` : roleLabel[role];
+        const extraStyle = role === 'arrivee' ? 'border-radius:3px;' : '';
+        return `<div style="display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer" data-hstep-idx="${s.idx}">
+          <div class="pin-num" style="--pin-color:${pinColor};width:24px;height:24px;font-size:10px;box-shadow:none;border-width:1px;${extraStyle}">${role==='depart'?'D':role==='arrivee'?'A':etapeBefore}</div>
+          <div>
+            <div style="font-family:'Fraunces',serif;font-size:14px;color:var(--ink);text-align:left">${escapeHtml(p.name)}</div>
+            <div style="font-size:11px;color:var(--ink-soft);letter-spacing:.04em;text-transform:uppercase">${label2}</div>
+            ${s.note?`<div style="font-size:11.5px;color:var(--ink-soft);font-style:italic;margin-top:3px;text-align:left;line-height:1.4">${escapeHtml(s.note)}</div>`:''}
+          </div>
+        </div>`;
+      }).join('');
+      list.innerHTML = `
+        <div style="padding:14px 14px 18px">
+          <div style="font-family:'Fraunces',serif;font-style:italic;font-size:22px;color:#3d5a3a;margin-bottom:6px">${escapeHtml(h.name)}</div>
+          ${h.note?`<div style="margin-bottom:14px;font-style:italic;color:var(--ink-soft);font-size:13px;line-height:1.5">${escapeHtml(h.note)}</div>`:''}
+          ${stepsHtml}
+          ${state.hikes.length>1?`<div style="margin-top:16px;font-size:11.5px;color:var(--ink-soft);letter-spacing:.06em;text-transform:uppercase">Autres randonnées</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+            ${state.hikes.filter(hh=>hh.id!==h.id).map(hh=>`
+              <button data-hswitch="${hh.id}" style="background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-family:inherit;font-size:12px;color:var(--ink-soft);cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+                <span style="width:8px;height:8px;border-radius:50%;background:${hh.color}"></span>${escapeHtml(hh.name)}
+              </button>`).join('')}
+          </div>`:''}
+        </div>`;
+      list.querySelectorAll('[data-hstep-idx]').forEach(el => {
+        el.addEventListener('click', () => {
+          const idx = +el.getAttribute('data-hstep-idx');
+          const layer = hikeLayers[h.id];
+          if (!layer) return;
+          let found = null;
+          layer.eachLayer(l => {
+            if (l.getLatLng && Math.abs(l.getLatLng().lat - PLACES[idx].lat) < 1e-6) found = l;
+          });
+          if (found) {
+            map.flyTo([PLACES[idx].lat, PLACES[idx].lng], Math.max(map.getZoom(), 13), { duration: 0.6 });
+            setTimeout(() => found.openPopup(), 500);
+          }
+        });
+      });
+      list.querySelectorAll('[data-hswitch]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activeHike = btn.getAttribute('data-hswitch');
+          applyFilters();
+        });
+      });
+    }
+    return;
+  }
+
+  if (!visibleIndices.length) {
+    list.innerHTML = `<div class="empty"><em>Aucun lieu</em>Essayez d'élargir vos filtres.</div>`;
+    return;
+  }
+  visibleIndices.sort((a,b) => PLACES[a].name.localeCompare(PLACES[b].name, 'fr', {sensitivity:'base'}));
+  const fragments = visibleIndices.map(idx => {
+    const p = PLACES[idx];
+    const color = CATS.colors[p.cat] || '#444';
+    const icon = CATS.icons[p.cat] || '•';
+    const label = CATS.labels[p.cat] || '';
+    const addr = (p.address || '').replace(', La Réunion','').split(',').slice(-2).join(',').trim();
+    const isActive = state.active === idx;
+    const tip = state.tips[idx];
+    const hasTip = !!tip;
+    // Inline tip block — always visible in the card
+    const tipInline = hasTip
+      ? `<div class="card-tip-inline">
+           <div class="card-tip-header">
+             <span class="card-tip-label">Tips de Cynthia et Vincent</span>
+             <button class="card-tip-edit" data-card-tip="${idx}" title="Modifier">✏</button>
+           </div>${escapeHtml(tip)}</div>`
+      : `<button class="card-tip-add" data-card-tip="${idx}">✦ Ajouter un tip</button>`;
+    const card = `
+      <div class="card${isActive ? ' active' : ''}" data-idx="${idx}" style="--cat-color:${color}">
+        <div class="card-marker">${icon}</div>
+        <div class="card-body">
+          <h3 class="card-name">${escapeHtml(p.name)}</h3>
+          <div class="card-meta"><span class="card-cat">${label}</span></div>
+          ${addr ? `<div class="card-addr">${escapeHtml(addr)}</div>` : ''}
+          ${tipInline}
+        </div>
+      </div>`;
+    const drawer = (isActive && state.tipDrawer && state.tipDrawer.idx === idx)
+      ? buildTipDrawer(idx)
+      : '';
+    return card + drawer;
+  }).join('');
+  list.innerHTML = fragments;
+
+  list.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      // Don't trigger card activate if clicking the tip button inside it
+      if (e.target.closest('[data-card-tip]')) return;
+      const idx = +card.getAttribute('data-idx');
+      // Close drawer if clicking a different card
+      if (state.tipDrawer && state.tipDrawer.idx !== idx) state.tipDrawer = null;
+      setActive(idx, true);
+    });
+  });
+  list.querySelectorAll('[data-card-tip]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = +btn.getAttribute('data-card-tip');
+      if (state.tipDrawer && state.tipDrawer.idx === idx && state.tipDrawer.mode === 'edit') {
+        closeSidebarTip();
+      } else {
+        // Open directly in edit mode (skip read mode — edit is the action)
+        state.tipDrawer = { idx, mode: 'edit' };
+        state.active = idx;
+        renderListOnly();
+        setTimeout(() => {
+          const drawer = document.querySelector('.tip-drawer');
+          if (drawer) drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          const ta = document.getElementById('sidebar-tip-ta');
+          if (ta) ta.focus();
+        }, 30);
+      }
+    });
+  });
+  attachTipDrawerHandlers();
+}
+
+// Re-render only the list portion (no map changes) — used after tip edits
+function renderListOnly() {
+  if (state.cat === '__circuits__' || state.cat === '__hikes__') return;
+  const list = document.getElementById('list');
+  const visible = [];
+  PLACES.forEach((p, idx) => {
+    if (matchesPlace(p)) visible.push(idx);
+  });
+  renderList(visible);
+}
+
+function setActive(idx, fly) {
+  state.active = idx;
+  // Close tip drawer if switching to a different card
+  if (state.tipDrawer && state.tipDrawer.idx !== idx) state.tipDrawer = null;
+  // Re-render the list to show tip button + drawer on the newly active card
+  renderListOnly();
+  markers.forEach(m => {
+    const el = m.getElement();
+    if (el) {
+      const pin = el.querySelector('.pin');
+      if (pin) pin.classList.toggle('active', m._idx === idx);
+    }
+  });
+  const m = markers[idx];
+  if (!m) return;
+  if (fly) {
+    map.flyTo([PLACES[idx].lat, PLACES[idx].lng], Math.max(map.getZoom(), 13), { duration: 0.8 });
+    setTimeout(() => m.openPopup(), 600);
+  } else { m.openPopup(); }
+}
+
+function scrollCardIntoView(idx) {
+  const card = document.querySelector(`.card[data-idx="${idx}"]`);
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function renderCircuitsPanel() {
+  const list = document.getElementById('circuit-list');
+  const label = document.getElementById('circ-count-label');
+  document.getElementById('badge-circuits').textContent = state.circuits.length;
+  const chip = document.getElementById('chip-circuits');
+  chip.style.display = state.circuits.length ? '' : 'none';
+
+  if (!state.circuits.length) {
+    label.textContent = 'Aucun circuit';
+    list.innerHTML = `<div class="empty"><em>Pas encore de circuit</em>Sélectionnez plusieurs adresses dans l'ordre, ajoutez vos notes, et créez votre itinéraire.</div>`;
+    return;
+  }
+  label.textContent = `${state.circuits.length} circuit${state.circuits.length>1?'s':''}`;
+  list.innerHTML = state.circuits.map(c => {
+    const isActive = state.activeCircuit === c.id;
+    return `
+      <div class="circuit-card${isActive ? ' active' : ''}" data-id="${c.id}" style="--circ-color:${c.color}">
+        <div class="circuit-card-head">
+          <div class="circuit-dot"></div>
+          <h3 class="circuit-name">${escapeHtml(c.name)}</h3>
+        </div>
+        <div class="circuit-meta"><span>${c.points.length} étape${c.points.length>1?'s':''}</span></div>
+        ${c.note ? `<div class="circuit-note">${escapeHtml(c.note)}</div>` : ''}
+        <div class="circuit-actions">
+          <button class="btn-show" data-action="show" data-id="${c.id}">Voir sur la carte</button>
+          <button data-action="edit" data-id="${c.id}">Modifier</button>
+          <button class="btn-del" data-action="delete" data-id="${c.id}">Supprimer</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-id');
+      const act = btn.getAttribute('data-action');
+      if (act === 'show') showCircuitOnMap(id);
+      else if (act === 'edit') openEditor(id);
+      else if (act === 'delete') deleteCircuit(id);
+    });
+  });
+}
+
+function showCircuitOnMap(id) {
+  state.activeCircuit = id;
+  state.cat = '__circuits__';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  const chip = document.getElementById('chip-circuits');
+  if (chip) chip.classList.add('active');
+  switchTab('addresses');
+  applyFilters();
+  renderCircuitsPanel();
+}
+
+function deleteCircuit(id) {
+  const c = state.circuits.find(c => c.id === id);
+  if (!c) return;
+  if (!confirm(`Supprimer le circuit « ${c.name} » ?`)) return;
+  state.circuits = state.circuits.filter(c => c.id !== id);
+  if (state.activeCircuit === id) state.activeCircuit = null;
+  saveCircuits();
+  renderCircuitsPanel();
+  if (state.cat === '__circuits__') {
+    if (!state.circuits.length) {
+      state.cat = 'all';
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('.chip[data-cat="all"]').classList.add('active');
+    }
+    applyFilters();
+  } else {
+    updateCounts();
+  }
+}
+
+function renderHikesPanel() {
+  const list = document.getElementById('hike-list');
+  const label = document.getElementById('hike-count-label'); if (!label) return;
+  const badgeHikes = document.getElementById('badge-hikes'); if (badgeHikes) badgeHikes.textContent = state.hikes.length;
+  const chip = document.getElementById('chip-hikes');
+  if (chip) chip.style.display = state.hikes.length ? '' : 'none';
+
+  if (!state.hikes.length) {
+    label.textContent = 'Aucune randonnée';
+    list.innerHTML = `<div class="empty"><em>Pas encore de randonnée</em>Définissez un départ, une arrivée et vos étapes pour tracer votre itinéraire.</div>`;
+    return;
+  }
+  label.textContent = `${state.hikes.length} randonnée${state.hikes.length>1?'s':''}`;
+  list.innerHTML = state.hikes.map(h => {
+    const isActive = state.activeHike === h.id;
+    const departPt = h.points.find(s => s.role === 'depart');
+    const arrivePt = h.points.find(s => s.role === 'arrivee');
+    const etapeCount = h.points.filter(s => (s.role||'etape') === 'etape').length;
+    const summary = [
+      departPt ? `Départ : ${escapeHtml(PLACES[departPt.idx]?.name||'')}` : null,
+      arrivePt ? `Arrivée : ${escapeHtml(PLACES[arrivePt.idx]?.name||'')}` : null,
+      etapeCount ? `${etapeCount} étape${etapeCount>1?'s':''}` : null,
+    ].filter(Boolean).join(' · ');
+    return `
+      <div class="circuit-card${isActive?' active':''}" data-hid="${h.id}" style="--circ-color:${h.color}">
+        <div class="circuit-card-head">
+          <div class="circuit-dot"></div>
+          <h3 class="circuit-name">${escapeHtml(h.name)}</h3>
+        </div>
+        <div class="circuit-meta"><span>${summary||h.points.length+' point'+(h.points.length>1?'s':'')}</span></div>
+        ${h.note?`<div class="circuit-note">${escapeHtml(h.note)}</div>`:''}
+        <div class="circuit-actions">
+          <button class="btn-show" data-haction="show" data-hid="${h.id}">Voir sur la carte</button>
+          <button data-haction="edit" data-hid="${h.id}">Modifier</button>
+          <button class="btn-del" data-haction="delete" data-hid="${h.id}">Supprimer</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('button[data-haction]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute('data-hid');
+      const act = btn.getAttribute('data-haction');
+      if (act === 'show') showHikeOnMap(id);
+      else if (act === 'edit') openHikeEditor(id);
+      else if (act === 'delete') deleteHike(id);
+    });
+  });
+}
+
+function showHikeOnMap(id) {
+  state.activeHike = id;
+  state.cat = '__hikes__';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  const chip = document.getElementById('chip-hikes');
+  if (chip) chip.classList.add('active');
+  switchTab('addresses');
+  applyFilters();
+  renderHikesPanel();
+}
+
+function deleteHike(id) {
+  const h = state.hikes.find(h => h.id === id);
+  if (!h) return;
+  if (!confirm(`Supprimer la randonnée « ${h.name} » ?`)) return;
+  state.hikes = state.hikes.filter(h => h.id !== id);
+  if (state.activeHike === id) state.activeHike = null;
+  saveHikes();
+  renderHikesPanel();
+  if (state.cat === '__hikes__') {
+    if (!state.hikes.length) {
+      state.cat = 'all';
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('.chip[data-cat="all"]').classList.add('active');
+    }
+    applyFilters();
+  } else { updateCounts(); }
+}
+
+function openHikeEditor(idOrNull) {
+  if (idOrNull) {
+    const existing = state.hikes.find(h => h.id === idOrNull);
+    state.editing = JSON.parse(JSON.stringify(existing));
+    state.editing.kind = 'hike';
+    document.getElementById('editor-title').innerHTML = 'Modifier <em>randonnée</em>';
+  } else {
+    state.editing = {
+      kind: 'hike', id: newId(), name: '', note: '',
+      color: CIRCUIT_COLORS[state.hikes.length % CIRCUIT_COLORS.length],
+      points: [],
+    };
+    document.getElementById('editor-title').innerHTML = 'Nouvelle <em>randonnée</em>';
+  }
+  document.getElementById('editor-left-title').textContent = 'La randonnée';
+  document.getElementById('editor-steps-title').textContent = "Points (dans l'ordre)";
+  document.getElementById('circ-name').value = state.editing.name;
+  document.getElementById('circ-name').placeholder = 'Ex. Tour du Piton des Neiges';
+  document.getElementById('circ-note').value = state.editing.note;
+  document.getElementById('circ-note').placeholder = 'Description, difficulté, durée…';
+  document.getElementById('picker-search').value = '';
+  renderEditor();
+  document.getElementById('editor').classList.add('open');
+  setTimeout(() => document.getElementById('circ-name').focus(), 50);
+}
+
+function openEditor(idOrNull) {
+  if (idOrNull) {
+    const existing = state.circuits.find(c => c.id === idOrNull);
+    state.editing = JSON.parse(JSON.stringify(existing));
+    state.editing.kind = 'circuit';
+    document.getElementById('editor-title').innerHTML = 'Modifier <em>circuit</em>';
+  } else {
+    const departIdx = PLACES.findIndex(p => p.cat === 'depart');
+    state.editing = {
+      kind: 'circuit', id: newId(), name: '', note: '',
+      color: nextCircuitColor(),
+      points: departIdx >= 0 ? [{ idx: departIdx, note: '' }] : [],
+    };
+    document.getElementById('editor-title').innerHTML = 'Nouveau <em>circuit</em>';
+  }
+  document.getElementById('editor-left-title').textContent = 'Le circuit';
+  document.getElementById('editor-steps-title').textContent = "Étapes (dans l'ordre)";
+  document.getElementById('circ-name').value = state.editing.name;
+  document.getElementById('circ-name').placeholder = 'Ex. Journée volcan & Sud sauvage';
+  document.getElementById('circ-note').value = state.editing.note;
+  document.getElementById('circ-note').placeholder = 'Une journée pour…';
+  document.getElementById('picker-search').value = '';
+  renderEditor();
+  document.getElementById('editor').classList.add('open');
+  setTimeout(() => document.getElementById('circ-name').focus(), 50);
+}
+
+function closeEditor() {
+  document.getElementById('editor').classList.remove('open');
+  state.editing = null;
+}
+
+function renderEditor() {
+  if (!state.editing) return;
+  const stepList = document.getElementById('step-list');
+  if (!state.editing.points.length) {
+    stepList.classList.add('empty-state');
+    stepList.innerHTML = `Aucune étape — choisissez des adresses à droite`;
+  } else {
+    stepList.classList.remove('empty-state');
+    const isHike = state.editing.kind === 'hike';
+    stepList.innerHTML = state.editing.points.map((s, i) => {
+      const p = PLACES[s.idx];
+      const isDepart = p.cat === 'depart';
+      const label = CATS.labels[p.cat] || '';
+      const stepNumStyle = isDepart
+        ? 'background:var(--ink); font-size:10px; letter-spacing:.04em;'
+        : '';
+      const nonDepartBefore = state.editing.points.slice(0, i).filter(s2 => PLACES[s2.idx].cat !== 'depart').length;
+      const displayNum = isDepart ? '0' : nonDepartBefore + 1;
+      const tools = isDepart
+        ? `<div class="step-tools">
+             <button data-act="up" data-i="${i}" disabled style="opacity:.2;cursor:default">↑</button>
+             <button data-act="down" data-i="${i}" disabled style="opacity:.2;cursor:default">↓</button>
+             <button class="btn-rm" data-act="remove" data-i="${i}" title="Retirer le point de départ" style="opacity:.6">×</button>
+           </div>`
+        : `<div class="step-tools">
+             <button data-act="up" data-i="${i}" title="Monter" ${(i === 0 || (i === 1 && state.editing.points[0] && PLACES[state.editing.points[0].idx]?.cat === 'depart'))?'disabled style="opacity:.3;cursor:default"':''}>↑</button>
+             <button data-act="down" data-i="${i}" title="Descendre" ${i===state.editing.points.length-1?'disabled style="opacity:.3;cursor:default"':''}>↓</button>
+             <button class="btn-rm" data-act="remove" data-i="${i}" title="Retirer">×</button>
+           </div>`;
+
+      // Role selector for hike points
+      const role = s.role || 'etape';
+      const roleHtml = isHike ? `
+        <div class="role-select" data-role-i="${i}">
+          <button class="role-btn${role==='depart'?' active-depart':''}" data-role="depart" data-ri="${i}">Départ</button>
+          <button class="role-btn${role==='etape'?' active-etape':''}" data-role="etape" data-ri="${i}">Étape</button>
+          <button class="role-btn${role==='arrivee'?' active-arrivee':''}" data-role="arrivee" data-ri="${i}">Arrivée</button>
+        </div>` : '';
+
+      return `
+        <div class="step${isDepart ? ' step-depart' : ''}" data-i="${i}">
+          <div class="step-num" style="${stepNumStyle}">${isHike ? (role==='depart'?'D':role==='arrivee'?'A':displayNum) : displayNum}</div>
+          <div class="step-info">
+            <div class="step-name">${escapeHtml(p.name)}</div>
+            <div class="step-meta">${escapeHtml(label)}</div>
+            ${roleHtml}
+            ${!isDepart ? `<textarea class="step-note" data-i="${i}" placeholder="Note pour ce point (optionnel)…" maxlength="300">${escapeHtml(s.note || '')}</textarea>` : ''}
+          </div>
+          ${tools}
+        </div>`;
+    }).join('');
+    stepList.querySelectorAll('button[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = +btn.getAttribute('data-i');
+        const act = btn.getAttribute('data-act');
+        const hasDepart = state.editing.points.length > 0 && PLACES[state.editing.points[0].idx]?.cat === 'depart';
+        const minUp = hasDepart ? 2 : 1;  // can't move above the depart slot (or above 0 if no depart)
+        if (act === 'up' && i >= minUp) {
+          [state.editing.points[i-1], state.editing.points[i]] = [state.editing.points[i], state.editing.points[i-1]];
+        } else if (act === 'down' && i < state.editing.points.length-1) {
+          [state.editing.points[i+1], state.editing.points[i]] = [state.editing.points[i], state.editing.points[i+1]];
+        } else if (act === 'remove') {
+          state.editing.points.splice(i, 1);
+        }
+        renderEditor();
+      });
+    });
+    stepList.querySelectorAll('.step-note').forEach(ta => {
+      ta.addEventListener('input', () => {
+        const i = +ta.getAttribute('data-i');
+        state.editing.points[i].note = ta.value;
+      });
+    });
+    // Role buttons (hike only)
+    stepList.querySelectorAll('[data-role]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = +btn.getAttribute('data-ri');
+        const role = btn.getAttribute('data-role');
+        state.editing.points[i].role = role;
+        renderEditor();
+      });
+    });
+  }
+  renderPicker();
+  const n = state.editing.points.length;
+  document.getElementById('summary-count').textContent = n;
+  document.getElementById('summary-plural').textContent = n > 1 ? 's' : '';
+}
+
+function renderPicker() {
+  const q = document.getElementById('picker-search').value.trim().toLowerCase();
+  const addedIdx = new Set(state.editing.points.map(s => s.idx));
+  const results = [];
+  PLACES.forEach((p, idx) => {
+    if (p.cat === 'depart') return;  // depart is auto-added, not selectable
+    if (q) {
+      const hay = (p.name + ' ' + p.address).toLowerCase();
+      if (!hay.includes(q)) return;
+    }
+    results.push(idx);
+  });
+  results.sort((a,b) => PLACES[a].name.localeCompare(PLACES[b].name, 'fr', {sensitivity:'base'}));
+  const html = results.slice(0, 120).map(idx => {
+    const p = PLACES[idx];
+    const color = CATS.colors[p.cat] || '#444';
+    const icon = CATS.icons[p.cat] || '•';
+    const added = addedIdx.has(idx);
+    return `
+      <div class="pick-item${added ? ' added' : ''}" data-idx="${idx}" style="--cat-color:${color}">
+        <div class="pick-marker">${icon}</div>
+        <div class="pick-name">${escapeHtml(p.name)}</div>
+        <button class="pick-add" data-idx="${idx}" ${added ? 'disabled' : ''}>${added ? '✓' : '+'}</button>
+      </div>`;
+  }).join('');
+  const wrap = document.getElementById('picker-results');
+  wrap.innerHTML = html || `<div class="empty" style="padding:20px"><em>Aucun résultat</em></div>`;
+  wrap.querySelectorAll('.pick-add').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = +btn.getAttribute('data-idx');
+      if (state.editing.points.some(s => s.idx === idx)) return;
+      state.editing.points.push({ idx, note: '' });
+      renderEditor();
+    });
+  });
+}
+
+function saveEditor() {
+  if (!state.editing) return;
+  const name = document.getElementById('circ-name').value.trim();
+  const note = document.getElementById('circ-note').value.trim();
+  if (!name) {
+    const kind = state.editing.kind === 'hike' ? 'randonnée' : 'circuit';
+    alert(`Donnez un nom à votre ${kind}.`);
+    document.getElementById('circ-name').focus();
+    return;
+  }
+  const hasContent = state.editing.kind === 'hike'
+    ? state.editing.points.length > 0
+    : state.editing.points.some(s => PLACES[s.idx]?.cat !== 'depart');
+  if (!hasContent) {
+    alert(state.editing.kind === 'hike'
+      ? 'Ajoutez au moins un point à la randonnée.'
+      : 'Ajoutez au moins une adresse au circuit.');
+    return;
+  }
+  state.editing.name = name;
+  state.editing.note = note;
+  const savedId = state.editing.id;
+
+  if (state.editing.kind === 'hike') {
+    const existingIdx = state.hikes.findIndex(h => h.id === savedId);
+    if (existingIdx >= 0) state.hikes[existingIdx] = state.editing;
+    else state.hikes.push(state.editing);
+    saveHikes();
+    closeEditor();
+    renderHikesPanel();
+    if (state.cat === '__hikes__' && state.activeHike === savedId) applyFilters();
+    else updateCounts();
+  } else {
+    const existingIdx = state.circuits.findIndex(c => c.id === savedId);
+    if (existingIdx >= 0) state.circuits[existingIdx] = state.editing;
+    else state.circuits.push(state.editing);
+    saveCircuits();
+    closeEditor();
+    renderCircuitsPanel();
+    if (state.cat === '__circuits__' && state.activeCircuit === savedId) applyFilters();
+    else updateCounts();
+  }
+}
+
+function switchTab(name) {
+  state.tab = name;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.getAttribute('data-tab') === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'panel-' + name);
+  });
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => switchTab(t.getAttribute('data-tab')));
+});
+
+document.getElementById('filters').addEventListener('click', e => {
+  const btn = e.target.closest('.chip');
+  if (!btn) return;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  state.cat = btn.getAttribute('data-cat');
+  state.active = null;
+  state.tipDrawer = null;
+  if (state.cat === '__circuits__' && !state.activeCircuit && state.circuits.length) {
+    state.activeCircuit = state.circuits[0].id;
+  }
+  if (state.cat === '__hikes__' && !state.activeHike && state.hikes.length) {
+    state.activeHike = state.hikes[0].id;
+  }
+  applyFilters();
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  state.q = e.target.value.trim();
+  state.tipDrawer = null;
+  if (state.cat === '__circuits__' || state.cat === '__hikes__') {
+    state.cat = 'all';
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    document.querySelector('.chip[data-cat="all"]').classList.add('active');
+  }
+  applyFilters();
+});
+
+document.getElementById('btn-new-circuit').addEventListener('click', () => openEditor(null));
+const btnNewHike = document.getElementById('btn-new-hike'); if (btnNewHike) btnNewHike.addEventListener('click', () => openHikeEditor(null));
+document.getElementById('editor-close').addEventListener('click', closeEditor);
+document.getElementById('btn-cancel').addEventListener('click', closeEditor);
+document.getElementById('btn-save').addEventListener('click', saveEditor);
+document.getElementById('editor').addEventListener('click', e => {
+  if (e.target.id === 'editor') closeEditor();
+});
+document.getElementById('picker-search').addEventListener('input', renderPicker);
+
+/* ========= EXPORT / IMPORT ========= */
+function exportData() {
+  const payload = {
+    _format: 'reunion-adresses/v1',
+    exportedAt: new Date().toISOString(),
+    tips: state.tips,
+    circuits: state.circuits,
+    hikes: state.hikes,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `reunion-data-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data || (data._format && data._format !== 'reunion-adresses/v1')) {
+        alert('Format de fichier non reconnu.');
+        return;
+      }
+      const tipsCount = data.tips ? Object.keys(data.tips).length : 0;
+      const circCount = data.circuits ? data.circuits.length : 0;
+      const hikeCount = data.hikes ? data.hikes.length : 0;
+      const msg = `Importer ${tipsCount} tip${tipsCount>1?'s':''}, ${circCount} circuit${circCount>1?'s':''} et ${hikeCount} randonnée${hikeCount>1?'s':''} ?\n\n(Vos données actuelles seront fusionnées.)`;
+      if (!confirm(msg)) return;
+      if (data.tips && typeof data.tips === 'object') {
+        state.tips = { ...state.tips, ...data.tips };
+        saveTips();
+      }
+      if (Array.isArray(data.circuits)) {
+        const byId = new Map(state.circuits.map(c => [c.id, c]));
+        for (const c of data.circuits) { if (c && c.id) byId.set(c.id, c); }
+        state.circuits = Array.from(byId.values());
+        saveCircuits();
+      }
+      if (Array.isArray(data.hikes)) {
+        const byId = new Map(state.hikes.map(h => [h.id, h]));
+        for (const h of data.hikes) { if (h && h.id) byId.set(h.id, h); }
+        state.hikes = Array.from(byId.values());
+        saveHikes();
+      }
+      renderCircuitsPanel();
+      renderHikesPanel();
+      applyFilters();
+      alert('Import terminé.');
+    } catch (err) {
+      alert('Erreur lors de la lecture du fichier : ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+
+/* ========= EXPORT VERSION FIGÉE ========= */
+function exportFrozen() {
+  // Gather current state (localStorage overrides + xlsx tips merged)
+  const frozenTips = { ...XLSX_TIPS, ...state.tips };
+  const frozenCircuits = state.circuits;
+  const frozenHikes = state.hikes;
+
+  // Fetch the current page source
+  const src = document.documentElement.outerHTML;
+
+  // 1. Replace XLSX_TIPS with the fully-merged tips
+  const tipsJson = JSON.stringify(frozenTips);
+  let out = src.replace(
+    /const XLSX_TIPS = \{[\s\S]*?\};/,
+    'const XLSX_TIPS = ' + tipsJson + ';'
+  );
+
+  // 2. Inject frozen circuits + hikes as constants, and stub out storage
+  const circJson = JSON.stringify(frozenCircuits);
+  const hikeJson = JSON.stringify(frozenHikes);
+
+  // Replace the boot sequence to load from frozen constants instead of localStorage
+  out = out.replace(
+    'loadCircuits();\nloadHikes();\nloadTips();',
+    `// Frozen version — data baked in\nstate.circuits = ${circJson};\nstate.hikes = ${hikeJson};`
+    + '\n// loadTips handled by XLSX_TIPS merge in loadTips()\nloadTips();'
+  );
+
+  // 3. Disable the save functions so frozen copy stays read-only
+  out = out.replace(
+    'function saveCircuits() {',
+    'function saveCircuits() { return; // frozen\n  if(false) {'
+  );
+  out = out.replace(
+    'function saveHikes() {',
+    'function saveHikes() { return; // frozen\n  if(false) {'
+  );
+  out = out.replace(
+    'function saveTips() {',
+    'function saveTips() { return; // frozen\n  if(false) {'
+  );
+
+  // 4. Hide the settings bar (export/import/freeze not needed in read-only copy)
+  out = out.replace(
+    'class="settings-bar" style="display:none"',
+    'class="settings-bar" style="display:none" style="display:none"'
+  );
+
+  // 5. Make tip edit buttons read-only in frozen version (hide edit pencils)
+  out = out.replace(
+    '.card-tip-edit { display:none !important; } .card-tip-edit-off {',
+    '.card-tip-edit { display:none !important; } .card-tip-edit-off { display:none !important; /* frozen */ } .card-tip-edit-HIDDEN {'
+  );
+  out = out.replace(
+    '.card-tip-add { display:none !important; } .card-tip-add-off {',
+    '.card-tip-add { display:none !important; } .card-tip-add-off { display:none !important; /* frozen */ } .card-tip-add-HIDDEN {'
+  );
+
+  const blob = new Blob([out], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `reunion-${stamp}.html`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+document.getElementById('btn-export').addEventListener('click', exportData);
+document.getElementById('btn-freeze').addEventListener('click', exportFrozen);
+document.getElementById('btn-import').addEventListener('click', () =>
+  document.getElementById('import-file').click()
+);
+document.getElementById('import-file').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) importData(f);
+  e.target.value = '';
+});
+
+document.querySelector('.chip[data-cat="all"]').classList.add('active');
+
+state.circuits = [{"kind":"circuit","id":"c_mpqylanc_ve6mb","name":"1 jour - Tour de l'île","note":"A faire sur le début de votre séjour, pas mal pour commencez !","color":"#a8472e","points":[{"idx":65,"note":""},{"idx":48,"note":""},{"idx":6,"note":""},{"idx":46,"note":""},{"idx":41,"note":""},{"idx":49,"note":""}]},{"kind":"circuit","id":"c_mpqyptp6_et58z","name":"1 jour - Le Volcan","note":"Incontournable, faites le tot dans votre séjour car si mauvais temps vous aurez peut être l'occasion de retenter. Partez le plus tôt possible pour viser 9h max au pas de bellecombe ! cela maximisera les chances du temps clair ;-)","color":"#2a8a99","points":[{"idx":55,"note":""},{"idx":53,"note":""},{"idx":30,"note":""},{"idx":67,"note":""},{"idx":23,"note":""}]},{"kind":"circuit","id":"c_mpqysbe0_t480z","name":"1 jour - Cascade Grand Galet","note":"Petit circuit dans le sud pour voir une des plus belles cascades de l'ile. Adaptable en fonction de votre timing.","color":"#3d5a3a","points":[{"idx":42,"note":""},{"idx":13,"note":""},{"idx":86,"note":"au déjeuner avant ou après la cascade en fonction de votre timing"},{"idx":36,"note":"INCONTOURNABLE"},{"idx":27,"note":"escale baignade digestive sur le bassin naturel"},{"idx":41,"note":"pour le coucher de soleil !"}]},{"kind":"circuit","id":"c_mpqyxr4g_jlmw3","name":"1 jour - Cirque de Salazie","note":"","color":"#c97b3e","points":[{"idx":7,"note":"escale cascade vue de la route"},{"idx":81,"note":"case créole typique"},{"idx":38,"note":"Déjeuner - allez en terrasse en haut !"},{"idx":2,"note":"balade digestive avant de redescendre les pieds dans le sable"}]},{"kind":"circuit","id":"c_mpqz08gp_ei6a9","name":"1 jour - Maido","note":"Pique nique dans le parc national du Maido, prolongement juqu'au point de vue et redescente avec escale à la luge !","color":"#5a3a6a","points":[{"idx":8,"note":"Meilleur point de vue sur Mafate ! "},{"idx":5,"note":"petite balade s'il vous plait !"},{"idx":59,"note":"Les enfants et les adultes vont aimer !"},{"idx":87,"note":"finissez les pieds dans le sable au coucher du soleil"}]},{"kind":"circuit","id":"c_mpr283gk_o9t85","name":"1/2 journée","note":"Pique nique à Bassin Boeuf puis Distillerie Savana le soir, il faut réserver !","color":"#7a4d2a","points":[{"idx":26,"note":""},{"idx":47,"note":""},{"idx":62,"note":""}]}];
+state.hikes = [];
+loadTips();
+initMap();
+renderCircuitsPanel();
+if (document.getElementById('hike-list')) renderHikesPanel();
+</script>
+</body>
+</html>
